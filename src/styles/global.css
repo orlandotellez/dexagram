@@ -189,7 +189,7 @@ body {
   align-items: center;
   gap: 5px;
   border: 1px solid var(--hairline);
-  border-radius: 6px;
+  border-radius: 5px;
   padding: 7px 14px;
   font-family: var(--font-mono);
   font-size: 0.72rem;
@@ -236,7 +236,7 @@ body {
   display: inline-block;
   min-width: 18px;
   padding: 0 5px;
-  border-radius: 9px;
+  border-radius: 5px;
   background: var(--accent-tint);
   border: 1px solid var(--accent);
   color: var(--accent);
@@ -286,7 +286,7 @@ body {
 
 .shape-card {
   border: 1px solid var(--hairline);
-  border-radius: 8px;
+  border-radius: 5px;
   background: var(--node-bg);
   padding: 8px;
   margin-bottom: 10px;
@@ -328,7 +328,7 @@ body {
   letter-spacing: 0.08em;
   color: var(--muted);
   border: 0.8px solid var(--tag-border);
-  border-radius: 2px;
+  border-radius: 5px;
   padding: 1px 3px;
   margin: 0 auto 4px;
   width: fit-content;
@@ -421,7 +421,7 @@ body {
   width: 100%;
   margin-top: 4px;
   border: 1px solid var(--hairline);
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--input-bg);
   padding: 7px 9px;
   font-family: var(--font-sans);
@@ -474,7 +474,7 @@ body {
   align-items: center;
   gap: 4px;
   border: 1px solid var(--hairline);
-  border-radius: 6px;
+  border-radius: 5px;
   background: transparent;
   font-family: var(--font-mono);
   font-size: 0.66rem;
@@ -514,7 +514,7 @@ body {
 .side-btn {
   flex: 1;
   border: 1px solid var(--hairline);
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--input-bg);
   font-family: var(--font-mono);
   font-size: 0.7rem;
@@ -548,7 +548,7 @@ body {
   width: 30px;
   height: 30px;
   border: 1px solid var(--hairline);
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--input-bg);
   font-family: var(--font-mono);
   font-size: 0.8rem;
@@ -614,7 +614,7 @@ body {
 
 .mini-select {
   border: 1px solid var(--hairline);
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--input-bg);
   font-family: var(--font-mono);
   font-size: 0.64rem;
@@ -632,7 +632,7 @@ body {
   width: 200px;
   background: var(--node-bg);
   border: 1px solid var(--ink);
-  border-radius: 6px;
+  border-radius: 5px;
   font-family: var(--font-sans);
   color: var(--ink);
   overflow: hidden;
@@ -654,7 +654,7 @@ body {
   margin: 6px 0 0 8px;
   padding: 0 6px;
   border: 0.8px solid var(--tag-border);
-  border-radius: 2px;
+  border-radius: 5px;
   font-family: var(--font-mono);
   font-size: 7px;
   letter-spacing: 0.08em;
@@ -700,7 +700,7 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  border-radius: 3px;
+  border-radius: 5px;
 }
 
 .er-field-fk {
@@ -768,7 +768,7 @@ body {
   font-family: var(--font-mono);
   font-size: 8px;
   padding: 1px 4px;
-  border-radius: 2px;
+  border-radius: 5px;
   background: var(--paper);
   white-space: nowrap;
 }
@@ -858,7 +858,7 @@ body {
   width: 100%;
   padding: 8px 10px;
   border: 1px solid var(--hairline);
-  border-radius: 6px;
+  border-radius: 5px;
   background: transparent;
   font-family: var(--font-mono);
   font-size: 0.7rem;
@@ -906,7 +906,7 @@ body {
   align-items: center;
   gap: 6px;
   padding: 6px 10px;
-  border-radius: 6px;
+  border-radius: 5px;
   cursor: default;
   transition: background 120ms ease;
 }
@@ -940,7 +940,7 @@ body {
   width: 20px;
   height: 20px;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
   background: transparent;
   color: var(--soft);
   cursor: pointer;
@@ -965,7 +965,7 @@ body {
 .sidebar-project-input {
   flex: 1;
   border: 1px solid var(--accent);
-  border-radius: 4px;
+  border-radius: 5px;
   background: var(--input-bg);
   font-family: var(--font-sans);
   font-size: 0.78rem;
@@ -1115,7 +1115,7 @@ body {
 .home-search-input {
   width: 100%;
   border: 1px solid var(--hairline);
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--input-bg);
   font-family: var(--font-sans);
   font-size: 0.76rem;
@@ -1210,7 +1210,7 @@ body {
 .group-section {
   margin-bottom: 1.5rem;
   border: 1px solid var(--hairline);
-  border-radius: 10px;
+  border-radius: 5px;
   background: var(--paper);
   padding: 0 16px 16px;
 }
@@ -1238,7 +1238,7 @@ body {
 
 .group-name-input {
   border: 1px solid var(--accent);
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--input-bg);
   font-family: var(--font-sans);
   font-size: 0.92rem;
@@ -1277,7 +1277,7 @@ body {
   position: relative;
   display: flex;
   border: 1px solid var(--hairline);
-  border-radius: 10px;
+  border-radius: 5px;
   background: var(--node-bg);
   text-decoration: none;
   color: inherit;
@@ -1414,7 +1414,7 @@ body {
   z-index: 20;
   min-width: 150px;
   border: 1px solid var(--hairline);
-  border-radius: 8px;
+  border-radius: 5px;
   background: var(--node-bg);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   padding: 4px;
@@ -1427,7 +1427,7 @@ body {
   width: 100%;
   padding: 6px 10px;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
   background: transparent;
   font-family: var(--font-sans);
   font-size: 0.75rem;
@@ -1460,7 +1460,7 @@ body {
   margin: 3px 6px;
   padding: 5px 8px;
   border: 1px solid var(--hairline);
-  border-radius: 4px;
+  border-radius: 5px;
   background: var(--input-bg);
   font-family: var(--font-sans);
   font-size: 0.72rem;
@@ -1554,7 +1554,7 @@ body {
 
 
 .react-flow__controls {
-  border-radius: 6px;
+  border-radius: 5px;
   overflow: hidden;
   border: 1px solid var(--hairline);
   box-shadow: none;
@@ -1574,7 +1574,7 @@ body {
 }
 
 .react-flow__minimap {
-  border-radius: 6px;
+  border-radius: 5px;
   border: 1px solid var(--hairline);
   background: var(--paper);
 }
