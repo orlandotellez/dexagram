@@ -1,0 +1,12 @@
+---
+import Base from '../../layouts/Base.astro';
+import ErEditor from '../../components/ErEditor';
+
+export const prerender = false;
+
+const { slug } = Astro.params;
+---
+
+<Base title="Diagram Web — Editor">
+  <ErEditor slug={slug} client:only="react" />
+</Base>
