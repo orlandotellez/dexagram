@@ -8,7 +8,7 @@ interface Props {
 }
 
 const {
-  title = 'Diagram Web — editor de diagramas ER',
+  title = 'Dexagram — editor de diagramas ER',
   description = 'Editor visual de diagramas entidad-relación: organizá proyectos, creá diagramas y exportalos como HTML.',
 } = Astro.props;
 ---
@@ -24,9 +24,15 @@ const {
       /* Apply saved theme before first paint to prevent flash */
       (function () {
         try {
-          var t = localStorage.getItem('diagram-web:theme');
-          if (t) document.documentElement.setAttribute('data-theme', t);
-        } catch (e) {}
+          var t = localStorage.getItem('dexagram:theme');
+          if (t) {
+            document.documentElement.setAttribute('data-theme', t);
+          } else {
+            document.documentElement.setAttribute('data-theme', 'midnight');
+          }
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'midnight');
+        }
       })();
     </script>
   </head>

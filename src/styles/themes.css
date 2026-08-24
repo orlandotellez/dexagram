@@ -6,8 +6,7 @@
 
 
 
-html[data-theme="luna"],
-html:not([data-theme]) {
+html[data-theme="luna"] {
   --paper: #faf7fc;
   --paper-2: #f1ebf4;
   --ink: #2d1b2e;
@@ -61,7 +60,8 @@ html[data-theme="dark"] {
 
 
 
-html[data-theme="midnight"] {
+html[data-theme="midnight"],
+html:not([data-theme]) {
   --paper: #0c0c12;
   --paper-2: #15151e;
   --ink: #d4d2dc;

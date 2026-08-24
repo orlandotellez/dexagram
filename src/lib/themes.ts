@@ -51,13 +51,13 @@ export function readThemeColors(): ThemeColors {
 
 
 
-const LS_KEY = 'diagram-web:theme';
+const LS_KEY = 'dexagram:theme';
 
 export function getSavedTheme(): ThemeId {
-  if (typeof localStorage === 'undefined') return 'luna';
+  if (typeof localStorage === 'undefined') return 'midnight';
   const v = localStorage.getItem(LS_KEY);
   if (v && THEMES.some((t) => t.id === v)) return v as ThemeId;
-  return 'luna';
+  return 'midnight';
 }
 
 export function setTheme(id: ThemeId): void {
