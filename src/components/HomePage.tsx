@@ -1,9 +1,10 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { Diagram, Group } from '../lib/model';
 import { emptyDiagram, uid } from '../lib/model';
 import { ensureBootstrap, saveDiagrams, saveGroups, uploadJson } from '../lib/storage';
 import { parseErHtml } from '../lib/importHtml';
 import ThemeSwitcher from './ThemeSwitcher';
+import { ConfirmDialog, AlertDialog } from './ConfirmDialog';
 
 function relativeTime(ts: number | undefined): string {
   if (!ts) return '';
@@ -162,6 +163,15 @@ function DiagramCard({
   );
 }
 
+interface DialogState {
+  open: boolean;
+  title: string;
+  message: string;
+  danger?: boolean;
+  confirmText?: string;
+  onConfirm: () => void;
+}
+
 export default function HomePage() {
   const bootRef = useRef<{ groups: Group[]; diagrams: Diagram[] } | null>(null);
   if (!bootRef.current) bootRef.current = ensureBootstrap();
@@ -173,6 +183,35 @@ export default function HomePage() {
   const [groupDraft, setGroupDraft] = useState('');
   const [search, setSearch] = useState('');
   const importInputRef = useRef<HTMLInputElement>(null);
+
+  const [dialog, setDialog] = useState<DialogState>({
+    open: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const [alertDialog, setAlertDialog] = useState<{ open: boolean; title: string; message: string }>({
+    open: false,
+    title: '',
+    message: '',
+  });
+
+  const openConfirm = useCallback((opts: Omit<DialogState, 'open'>) => {
+    setDialog({ ...opts, open: true });
+  }, []);
+
+  const closeConfirm = useCallback(() => {
+    setDialog((prev) => ({ ...prev, open: false }));
+  }, []);
+
+  const openAlert = useCallback((title: string, message: string) => {
+    setAlertDialog({ open: true, title, message });
+  }, []);
+
+  const closeAlert = useCallback(() => {
+    setAlertDialog((prev) => ({ ...prev, open: false }));
+  }, []);
 
   const sortedDiagrams = useMemo(
     () => [...diagrams].sort((a, b) => (b.savedAt ?? 0) - (a.savedAt ?? 0)),
@@ -228,16 +267,24 @@ export default function HomePage() {
 
   const deleteGroup = (id: string) => {
     const g = groups.find((x) => x.id === id);
-    if (!confirm(`¿Eliminar el proyecto "${g?.name ?? ''}"? Sus diagramas pasarán a "Sin grupo".`)) return;
-    setGroups((prev) => {
-      const next = prev.filter((x) => x.id !== id);
-      saveGroups(next);
-      return next;
-    });
-    setDiagrams((prev) => {
-      const next = prev.map((d) => (d.groupId === id ? { ...d, groupId: undefined } : d));
-      saveDiagrams(next);
-      return next;
+    openConfirm({
+      title: 'Eliminar proyecto',
+      message: `¿Eliminar el proyecto "${g?.name ?? ''}"? Sus diagramas pasarán a "Sin grupo".`,
+      danger: true,
+      confirmText: 'Eliminar',
+      onConfirm: () => {
+        setGroups((prev) => {
+          const next = prev.filter((x) => x.id !== id);
+          saveGroups(next);
+          return next;
+        });
+        setDiagrams((prev) => {
+          const next = prev.map((d) => (d.groupId === id ? { ...d, groupId: undefined } : d));
+          saveDiagrams(next);
+          return next;
+        });
+        closeConfirm();
+      },
     });
   };
 
@@ -271,11 +318,19 @@ export default function HomePage() {
 
   const deleteDiagram = (id: string) => {
     const d = diagrams.find((x) => x.id === id);
-    if (!confirm(`¿Eliminar el diagrama "${d?.title || 'sin título'}"?`)) return;
-    setDiagrams((prev) => {
-      const next = prev.filter((x) => x.id !== id);
-      saveDiagrams(next);
-      return next;
+    openConfirm({
+      title: 'Eliminar diagrama',
+      message: `¿Eliminar el diagrama "${d?.title || 'sin título'}"? Esta acción no se puede deshacer.`,
+      danger: true,
+      confirmText: 'Eliminar',
+      onConfirm: () => {
+        setDiagrams((prev) => {
+          const next = prev.filter((x) => x.id !== id);
+          saveDiagrams(next);
+          return next;
+        });
+        closeConfirm();
+      },
     });
   };
 
@@ -307,7 +362,7 @@ export default function HomePage() {
       });
       window.location.assign(`/diagrama/${entry.id}`);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'No se pudo importar el archivo');
+      openAlert('Error', err instanceof Error ? err.message : 'No se pudo importar el archivo');
     }
   };
 
@@ -566,6 +621,23 @@ export default function HomePage() {
           </span>
         </footer>
       </div>
+
+      <ConfirmDialog
+        open={dialog.open}
+        title={dialog.title}
+        message={dialog.message}
+        danger={dialog.danger}
+        confirmText={dialog.confirmText}
+        onConfirm={dialog.onConfirm}
+        onCancel={closeConfirm}
+      />
+
+      <AlertDialog
+        open={alertDialog.open}
+        title={alertDialog.title}
+        message={alertDialog.message}
+        onClose={closeAlert}
+      />
     </div>
   );
 }

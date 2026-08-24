@@ -21,6 +21,7 @@ import RelationEdge, { type RelationEdgeType } from './RelationEdge';
 import { Inspector, type Selection } from './Inspector';
 import { ShapePalette, type ShapeKind } from './ShapePalette';
 import ThemeSwitcher from './ThemeSwitcher';
+import { AlertDialog } from './ConfirmDialog';
 import { readThemeColors } from '../lib/themes';
 import {
   type Diagram,
@@ -159,6 +160,11 @@ export default function ErEditor({ slug }: { slug?: string }) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const rfRef = useRef<ReactFlowInstance<EntityNodeType, RelationEdgeType> | null>(null);
   const hasHydrated = useRef(false);
+  const [alertState, setAlertState] = useState<{ open: boolean; title: string; message: string }>({
+    open: false,
+    title: '',
+    message: '',
+  });
 
   const activeId = boot.activeId;
   const groupId = boot.groupId;
@@ -504,7 +510,7 @@ export default function ErEditor({ slug }: { slug?: string }) {
         });
         window.location.assign(`/diagrama/${entry.id}`);
       } catch (err) {
-        alert(err instanceof Error ? err.message : 'No se pudo cargar el archivo');
+        setAlertState({ open: true, title: 'Error', message: err instanceof Error ? err.message : 'No se pudo cargar el archivo' });
       }
     },
     [groupId],
@@ -698,8 +704,15 @@ export default function ErEditor({ slug }: { slug?: string }) {
           Arrastrá formas de la paleta · conectá desde un punto (◦) de un campo · arrastrá un extremo de una línea para
           moverla · borrá con Supr
         </span>
-        <span className="canvas-hint-right">Diagram Web — editor ER estilo Luna</span>
+        <span className="canvas-hint-right">Dexagram — editor ER</span>
       </div>
+
+      <AlertDialog
+        open={alertState.open}
+        title={alertState.title}
+        message={alertState.message}
+        onClose={() => setAlertState((prev) => ({ ...prev, open: false }))}
+      />
     </div>
   );
 }
