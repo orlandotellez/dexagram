@@ -1,46 +1,74 @@
-# Astro Starter Kit: Basics
+# Dexagram
 
-```sh
-pnpm create astro@latest -- --template basics
-```
+Editor visual de diagramas entidad-relación (ER). Creá, editá y exportá modelos de base de datos como HTML con SVG.
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## Funcionalidades
 
-## 🚀 Project Structure
+- **Editor ER interactivo** — canvas con React Flow para arrastrar y conectar entidades
+- **6 temas** — Luna, Dark, Midnight, Slate, Emerald, Ocean
+- **Exportar a HTML** — genera un archivo HTML autónomo con SVG del diagrama
+- **Importar desde HTML** — re-importa diagramas exportados previamente
+- **Guardado automático** — persiste en localStorage del navegador
+- **Proyectos** — organizá diagramas en grupos/proyectos
+- **Slug para URLs** — compartí diagramas con enlaces amigables
 
-Inside of your Astro project, you'll see the following folders and files:
+## Estructura del proyecto
 
 ```text
 /
 ├── public/
-│   └── favicon.svg
-├── src
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
+├── src/
+│   ├── components/
+│   │   ├── ErEditor.tsx        # Editor principal con React Flow
+│   │   ├── EntityNode.tsx      # Nodo custom de entidad
+│   │   ├── RelationEdge.tsx    # Arista custom de relación
+│   │   ├── Inspector.tsx       # Panel lateral de propiedades
+│   │   ├── ShapePalette.tsx    # Paleta de formas arrastrables
+│   │   ├── ThemeSwitcher.tsx   # Selector de temas
+│   │   └── HomePage.tsx        # Página principal con listado
+│   ├── lib/
+│   │   ├── model.ts            # Modelo de datos (Entity, Field, Relation, Diagram)
+│   │   ├── storage.ts          # Persistencia en localStorage
+│   │   ├── themes.ts           # Sistema de temas y colores
+│   │   ├── exportHtml.ts       # Exportación a HTML/SVG
+│   │   └── importHtml.ts       # Importación desde HTML
+│   ├── layouts/
+│   │   └── Base.astro          # Layout base
+│   ├── pages/
+│   │   ├── index.astro         # Home — listado de diagramas
+│   │   └── diagrama/
+│   │       └── [slug].astro    # Editor de diagrama (on-demand)
+│   └── styles/
+│       ├── themes.css          # Variables CSS de los 6 temas
+│       └── global.css          # Estilos globales
+├── scripts/
+│   ├── verify-export.mjs       # Verificación de exportación
+│   └── verify-import.mjs       # Verificación de importación
 └── package.json
 ```
 
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
+## Comandos
 
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
+| Comando                   | Acción                                           |
 | :------------------------ | :----------------------------------------------- |
-| `pnpm install`             | Installs dependencies                            |
-| `pnpm dev`             | Starts local dev server at `localhost:4321`      |
-| `pnpm build`           | Build your production site to `./dist/`          |
-| `pnpm preview`         | Preview your build locally, before deploying     |
-| `pnpm astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `pnpm astro -- --help` | Get help using the Astro CLI                     |
+| `pnpm install`            | Instala dependencias                             |
+| `pnpm dev`                | Inicia el servidor de desarrollo en `localhost:4321` |
+| `pnpm build`              | Genera el build de producción en `./dist/`       |
+| `pnpm preview`            | Previsualiza el build localmente                 |
+| `pnpm astro ...`          | Ejecuta comandos CLI de Astro                    |
 
-## 👀 Want to learn more?
+## Stack
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+- **Astro 7** — framework estático con rendering híbrido
+- **React 19** — componentes interactivos
+- **@xyflow/react** — canvas de diagramas con nodos y aristas
+- **TypeScript** — tipado estricto
+
+## Desarrollo
+
+```sh
+pnpm install
+pnpm dev
+```
+
+Abrí `localhost:4321` en el navegador.
