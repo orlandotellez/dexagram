@@ -1279,9 +1279,9 @@ body {
   border: 1px solid var(--hairline);
   border-radius: 5px;
   background: var(--node-bg);
-  text-decoration: none;
   color: inherit;
   overflow: hidden;
+  cursor: pointer;
   transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
 }
 

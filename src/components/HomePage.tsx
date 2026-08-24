@@ -67,8 +67,12 @@ function DiagramCard({
     }
   };
 
+  const handleCardClick = () => {
+    if (!editing) window.location.href = href;
+  };
+
   return (
-    <a className="diagram-card" href={editing ? undefined : href} onClick={(e) => editing && e.preventDefault()}>
+    <div className="diagram-card" onClick={handleCardClick} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') handleCardClick(); }}>
       <div className="diagram-card-accent" />
       <div className="diagram-card-body">
         {editing ? (
@@ -112,7 +116,7 @@ function DiagramCard({
           className="diagram-card-menu-btn"
           title="Más opciones"
           onClick={(e) => {
-            e.preventDefault();
+            e.stopPropagation();
             setShowMenu(!showMenu);
           }}
         >
@@ -123,7 +127,7 @@ function DiagramCard({
           </svg>
         </button>
         {showMenu && (
-          <div className="diagram-card-dropdown">
+          <div className="diagram-card-dropdown" onClick={(e) => e.stopPropagation()}>
             <button type="button" className="dropdown-item" onClick={startEdit}>
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1">
                 <path d="M8.5 1.5l2 2-7 7H1.5v-2l7-7z" />
@@ -159,7 +163,7 @@ function DiagramCard({
           </div>
         )}
       </div>
-    </a>
+    </div>
   );
 }
 
