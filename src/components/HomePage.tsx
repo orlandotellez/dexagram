@@ -5,10 +5,6 @@ import { ensureBootstrap, saveDiagrams, saveGroups, uploadJson } from '../lib/st
 import { parseErHtml } from '../lib/importHtml';
 import ThemeSwitcher from './ThemeSwitcher';
 
-
-
-
-
 function relativeTime(ts: number | undefined): string {
   if (!ts) return '';
   const diff = Date.now() - ts;
@@ -23,14 +19,9 @@ function relativeTime(ts: number | undefined): string {
   return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
 }
 
-
-
-
-
 function ErDiagramIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {}
       <rect x="8" y="14" width="42" height="52" rx="4" stroke="currentColor" strokeWidth="1.2" fill="none" opacity="0.3" />
       <rect x="8" y="14" width="42" height="14" rx="4" stroke="currentColor" strokeWidth="0.8" fill="currentColor" fillOpacity="0.06" />
       <rect x="12" y="18" width="14" height="5" rx="1" stroke="currentColor" strokeWidth="0.6" fill="none" opacity="0.4" />
@@ -38,34 +29,24 @@ function ErDiagramIcon({ className }: { className?: string }) {
       <line x1="14" y1="36" x2="44" y2="36" stroke="currentColor" strokeWidth="0.6" opacity="0.2" />
       <line x1="14" y1="42" x2="44" y2="42" stroke="currentColor" strokeWidth="0.6" opacity="0.2" />
       <line x1="14" y1="48" x2="38" y2="48" stroke="currentColor" strokeWidth="0.6" opacity="0.2" />
-
       <rect x="70" y="8" width="42" height="44" rx="4" stroke="currentColor" strokeWidth="1.2" fill="none" opacity="0.3" />
       <rect x="70" y="8" width="42" height="14" rx="4" stroke="currentColor" strokeWidth="0.8" fill="currentColor" fillOpacity="0.06" />
       <rect x="74" y="12" width="12" height="5" rx="1" stroke="currentColor" strokeWidth="0.6" fill="none" opacity="0.4" />
       <line x1="70" y1="22" x2="112" y2="22" stroke="currentColor" strokeWidth="0.5" opacity="0.2" />
       <line x1="76" y1="30" x2="106" y2="30" stroke="currentColor" strokeWidth="0.6" opacity="0.2" />
       <line x1="76" y1="36" x2="106" y2="36" stroke="currentColor" strokeWidth="0.6" opacity="0.2" />
-
       <rect x="70" y="48" width="42" height="30" rx="4" stroke="currentColor" strokeWidth="1.2" fill="none" opacity="0.25" />
       <rect x="70" y="48" width="42" height="14" rx="4" stroke="currentColor" strokeWidth="0.8" fill="currentColor" fillOpacity="0.06" />
       <rect x="74" y="52" width="14" height="5" rx="1" stroke="currentColor" strokeWidth="0.6" fill="none" opacity="0.35" />
       <line x1="70" y1="62" x2="112" y2="62" stroke="currentColor" strokeWidth="0.5" opacity="0.15" />
       <line x1="76" y1="70" x2="100" y2="70" stroke="currentColor" strokeWidth="0.6" opacity="0.15" />
-
-      {}
       <path d="M50 30 Q60 30 60 20 Q60 14 70 14" stroke="currentColor" strokeWidth="0.8" strokeDasharray="3 2" fill="none" opacity="0.35" />
       <path d="M50 38 Q60 38 60 58 Q60 62 70 58" stroke="currentColor" strokeWidth="0.8" strokeDasharray="3 2" fill="none" opacity="0.3" />
-
-      {}
       <circle cx="70" cy="14" r="2" fill="currentColor" opacity="0.25" />
       <circle cx="70" cy="58" r="2" fill="currentColor" opacity="0.25" />
     </svg>
   );
 }
-
-
-
-
 
 function DiagramCard({
   d,
@@ -100,7 +81,7 @@ function DiagramCard({
     setEditing(false);
   };
 
-    const handleBlur = (e: React.FocusEvent) => {
+  const handleBlur = (e: React.FocusEvent) => {
     if (!menuRef.current?.contains(e.relatedTarget as Node)) {
       setShowMenu(false);
     }
@@ -108,9 +89,7 @@ function DiagramCard({
 
   return (
     <a className="diagram-card" href={editing ? undefined : href} onClick={(e) => editing && e.preventDefault()}>
-      {}
       <div className="diagram-card-accent" />
-
       <div className="diagram-card-body">
         {editing ? (
           <input
@@ -128,7 +107,6 @@ function DiagramCard({
         ) : (
           <div className="diagram-card-name">{d.title || '(sin título)'}</div>
         )}
-
         <div className="diagram-card-stats">
           <span className="diagram-card-stat">
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
@@ -146,11 +124,8 @@ function DiagramCard({
           </span>
           <span className="diagram-card-date">{relativeTime(d.savedAt)}</span>
         </div>
-
         {d.subtitle && <div className="diagram-card-subtitle">{d.subtitle}</div>}
       </div>
-
-      {}
       <div className="diagram-card-menu" ref={menuRef} onBlur={handleBlur}>
         <button
           type="button"
@@ -208,10 +183,6 @@ function DiagramCard({
   );
 }
 
-
-
-
-
 export default function HomePage() {
   const bootRef = useRef<{ groups: Group[]; diagrams: Diagram[] } | null>(null);
   if (!bootRef.current) bootRef.current = ensureBootstrap();
@@ -222,6 +193,7 @@ export default function HomePage() {
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [groupDraft, setGroupDraft] = useState('');
   const [search, setSearch] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const importInputRef = useRef<HTMLInputElement>(null);
 
   const sortedDiagrams = useMemo(
@@ -248,8 +220,6 @@ export default function HomePage() {
     return map;
   }, [filteredDiagrams]);
   const ungrouped = byGroup.get(null) ?? [];
-
-  
 
   const createGroup = () => {
     const n = groups.length + 1;
@@ -292,8 +262,6 @@ export default function HomePage() {
       return next;
     });
   };
-
-  
 
   const createDiagram = (groupId: string | undefined) => {
     const d: Diagram = { ...emptyDiagram(), id: uid(), groupId, savedAt: Date.now() };
@@ -383,37 +351,56 @@ export default function HomePage() {
     ));
 
   return (
-    <div className="home">
-      {}
-      <header className="home-header">
-        <div className="home-header-text">
-          <p className="eyebrow">DIAGRAM WEB</p>
-          <h1 className="home-title">Mis diagramas</h1>
-          <p className="home-subtitle">
-            Organizá tus modelos entidad-relación por proyecto y exportalos como HTML.
-          </p>
+    <div className="home-layout">
+      <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+        <div className="sidebar-header">
+          <div className="sidebar-brand">
+            <ErDiagramIcon className="sidebar-logo" />
+            {sidebarOpen && <span className="sidebar-brand-text">Dexagram</span>}
+          </div>
+          <button
+            type="button"
+            className="sidebar-toggle"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            title={sidebarOpen ? 'Contraer sidebar' : 'Expandir sidebar'}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              {sidebarOpen ? (
+                <path d="M10 3L5 8l5 5" />
+              ) : (
+                <path d="M6 3l5 5-5 5" />
+              )}
+            </svg>
+          </button>
         </div>
-        <div className="home-actions">
-          <button type="button" className="btn btn-primary" onClick={() => createDiagram(undefined)}>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <line x1="6" y1="1" x2="6" y2="11" />
-              <line x1="1" y1="6" x2="11" y2="6" />
+
+        <div className="sidebar-content">
+          <button type="button" className="sidebar-btn sidebar-btn-primary" onClick={() => createDiagram(undefined)}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <line x1="7" y1="1" x2="7" y2="13" />
+              <line x1="1" y1="7" x2="13" y2="7" />
             </svg>
-            Nuevo diagrama
+            {sidebarOpen && 'Nuevo diagrama'}
           </button>
-          <button type="button" className="btn btn-ghost" onClick={createGroup}>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.2">
-              <rect x="1" y="2" width="10" height="8" rx="1.5" />
-              <line x1="1" y1="4.5" x2="11" y2="4.5" />
-            </svg>
-            Nuevo proyecto
-          </button>
-          <button type="button" className="btn btn-ghost" onClick={() => importInputRef.current?.click()}>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.2">
-              <path d="M6 1v7M3 5l3 3 3-3M1.5 9.5h9" />
-            </svg>
-            Importar
-          </button>
+
+          {sidebarOpen && (
+            <button type="button" className="sidebar-btn" onClick={createGroup}>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.2">
+                <rect x="1" y="2" width="12" height="10" rx="1.5" />
+                <line x1="1" y1="5" x2="13" y2="5" />
+              </svg>
+              Nuevo proyecto
+            </button>
+          )}
+
+          {sidebarOpen && (
+            <button type="button" className="sidebar-btn" onClick={() => importInputRef.current?.click()}>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.2">
+                <path d="M7 1v8M4 6l3 3 3-3M2 11h10" />
+              </svg>
+              Importar
+            </button>
+          )}
           <input
             ref={importInputRef}
             type="file"
@@ -425,20 +412,67 @@ export default function HomePage() {
               e.target.value = '';
             }}
           />
-        </div>
-      </header>
 
-      {}
-      {diagrams.length > 0 && (
-        <div className="home-toolbar">
-          <div className="home-stats">
-            <span className="home-stat">
-              <strong>{diagrams.length}</strong> diagrama{diagrams.length === 1 ? '' : 's'}
-            </span>
-            <span className="home-stat-sep">·</span>
-            <span className="home-stat">
-              <strong>{groups.length}</strong> proyecto{groups.length === 1 ? '' : 's'}
-            </span>
+          {sidebarOpen && groups.length > 0 && (
+            <div className="sidebar-section">
+              <div className="sidebar-section-title">Proyectos</div>
+              {groups.map((g) => {
+                const count = diagrams.filter((d) => d.groupId === g.id).length;
+                return (
+                  <div key={g.id} className="sidebar-project">
+                    {editingGroupId === g.id ? (
+                      <input
+                        className="sidebar-project-input"
+                        value={groupDraft}
+                        autoFocus
+                        onChange={(e) => setGroupDraft(e.target.value)}
+                        onBlur={() => commitRename(g.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') commitRename(g.id);
+                          if (e.key === 'Escape') setEditingGroupId(null);
+                        }}
+                      />
+                    ) : (
+                      <>
+                        <span className="sidebar-project-name">{g.name}</span>
+                        <span className="sidebar-project-count">{count}</span>
+                        <button type="button" className="sidebar-project-btn" title="Renombrar" onClick={() => startRename(g)}>
+                          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1">
+                            <path d="M8.5 1.5l2 2-7 7H1.5v-2l7-7z" />
+                          </svg>
+                        </button>
+                        <button type="button" className="sidebar-project-btn sidebar-project-btn-danger" title="Eliminar" onClick={() => deleteGroup(g.id)}>
+                          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1">
+                            <path d="M2 3h8M4.5 3V1.5h3V3M3 3v7.5h6V3" />
+                          </svg>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="sidebar-footer">
+          <ThemeSwitcher />
+        </div>
+      </aside>
+
+      <div className="home-main-area">
+        <header className="home-topbar">
+          <div className="home-topbar-left">
+            <h1 className="home-title">Mis diagramas</h1>
+            <div className="home-stats">
+              <span className="home-stat">
+                <strong>{diagrams.length}</strong> diagrama{diagrams.length === 1 ? '' : 's'}
+              </span>
+              <span className="home-stat-sep">·</span>
+              <span className="home-stat">
+                <strong>{groups.length}</strong> proyecto{groups.length === 1 ? '' : 's'}
+              </span>
+            </div>
           </div>
           <div className="home-search">
             <svg className="home-search-icon" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.2">
@@ -458,94 +492,102 @@ export default function HomePage() {
               </button>
             )}
           </div>
-          <ThemeSwitcher />
-        </div>
-      )}
+        </header>
 
-      {diagrams.length === 0 && (
-        <div className="home-toolbar">
-          <div className="home-toolbar-spacer" />
-          <ThemeSwitcher />
-        </div>
-      )}
-
-      {}
-      <main className="home-main">
-        {}
-        {isEmpty && (
-          <div className="home-empty-state">
-            <ErDiagramIcon className="home-empty-icon" />
-            <h2 className="home-empty-title">Empezá a diseñar</h2>
-            <p className="home-empty-text">
-              Creá tu primer diagrama entidad-relación para visualizar el modelo de tu base de datos.
-            </p>
-            <div className="home-empty-actions">
-              <button type="button" className="btn btn-primary btn-lg" onClick={() => createDiagram(undefined)}>
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <line x1="7" y1="1" x2="7" y2="13" />
-                  <line x1="1" y1="7" x2="13" y2="7" />
-                </svg>
-                Nuevo diagrama
-              </button>
-              <button type="button" className="btn btn-ghost" onClick={createGroup}>
-                Crear proyecto
-              </button>
+        <main className="home-content">
+          {isEmpty && (
+            <div className="home-empty-state">
+              <ErDiagramIcon className="home-empty-icon" />
+              <h2 className="home-empty-title">Empezá a diseñar</h2>
+              <p className="home-empty-text">
+                Creá tu primer diagrama entidad-relación para visualizar el modelo de tu base de datos.
+              </p>
+              <div className="home-empty-actions">
+                <button type="button" className="btn btn-primary btn-lg" onClick={() => createDiagram(undefined)}>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <line x1="7" y1="1" x2="7" y2="13" />
+                    <line x1="1" y1="7" x2="13" y2="7" />
+                  </svg>
+                  Nuevo diagrama
+                </button>
+                <button type="button" className="btn btn-ghost" onClick={createGroup}>
+                  Crear proyecto
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {}
-        {isSearching && !hasResults && (
-          <div className="home-empty-state">
-            <svg className="home-empty-icon" width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <circle cx="20" cy="20" r="14" />
-              <line x1="30" y1="30" x2="42" y2="42" />
-              <line x1="14" y1="20" x2="26" y2="20" />
-            </svg>
-            <h2 className="home-empty-title">Sin resultados</h2>
-            <p className="home-empty-text">
-              No se encontraron diagramas para "{search}". Probá con otro término.
-            </p>
-          </div>
-        )}
+          {isSearching && !hasResults && (
+            <div className="home-empty-state">
+              <svg className="home-empty-icon" width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="20" cy="20" r="14" />
+                <line x1="30" y1="30" x2="42" y2="42" />
+                <line x1="14" y1="20" x2="26" y2="20" />
+              </svg>
+              <h2 className="home-empty-title">Sin resultados</h2>
+              <p className="home-empty-text">
+                No se encontraron diagramas para "{search}". Probá con otro término.
+              </p>
+            </div>
+          )}
 
-        {}
-        {groups.map((g) => {
-          const groupDiagrams = byGroup.get(g.id) ?? [];
-          if (isSearching && groupDiagrams.length === 0) return null;
-          return (
-            <section key={g.id} className="group-section">
+          {groups.map((g) => {
+            const groupDiagrams = byGroup.get(g.id) ?? [];
+            if (isSearching && groupDiagrams.length === 0) return null;
+            return (
+              <section key={g.id} className="group-section">
+                <div className="group-header">
+                  {editingGroupId === g.id ? (
+                    <input
+                      className="group-name-input"
+                      value={groupDraft}
+                      autoFocus
+                      placeholder="Nombre del proyecto"
+                      onChange={(e) => setGroupDraft(e.target.value)}
+                      onBlur={() => commitRename(g.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') commitRename(g.id);
+                        if (e.key === 'Escape') setEditingGroupId(null);
+                      }}
+                    />
+                  ) : (
+                    <>
+                      <h2 className="group-name">{g.name}</h2>
+                      <span className="badge">{groupDiagrams.length}</span>
+                      <button type="button" className="icon-btn" title="Renombrar proyecto" onClick={() => startRename(g)}>
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1">
+                          <path d="M8.5 1.5l2 2-7 7H1.5v-2l7-7z" />
+                        </svg>
+                      </button>
+                      <button type="button" className="icon-btn danger" title="Eliminar proyecto" onClick={() => deleteGroup(g.id)}>
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1">
+                          <path d="M2 3h8M4.5 3V1.5h3V3M3 3v7.5h6V3" />
+                        </svg>
+                      </button>
+                    </>
+                  )}
+                  <button type="button" className="mini-btn group-add" onClick={() => createDiagram(g.id)}>
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.2">
+                      <line x1="5" y1="1" x2="5" y2="9" />
+                      <line x1="1" y1="5" x2="9" y2="5" />
+                    </svg>
+                    Diagrama
+                  </button>
+                </div>
+                <div className="diagram-grid">
+                  {groupDiagrams.length === 0 && <p className="diagram-empty">Sin diagramas todavía.</p>}
+                  {renderDiagramCards(groupDiagrams)}
+                </div>
+              </section>
+            );
+          })}
+
+          {ungrouped.length > 0 && (
+            <section className="group-section">
               <div className="group-header">
-                {editingGroupId === g.id ? (
-                  <input
-                    className="group-name-input"
-                    value={groupDraft}
-                    autoFocus
-                    placeholder="Nombre del proyecto"
-                    onChange={(e) => setGroupDraft(e.target.value)}
-                    onBlur={() => commitRename(g.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') commitRename(g.id);
-                      if (e.key === 'Escape') setEditingGroupId(null);
-                    }}
-                  />
-                ) : (
-                  <>
-                    <h2 className="group-name">{g.name}</h2>
-                    <span className="badge">{groupDiagrams.length}</span>
-                    <button type="button" className="icon-btn" title="Renombrar proyecto" onClick={() => startRename(g)}>
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1">
-                        <path d="M8.5 1.5l2 2-7 7H1.5v-2l7-7z" />
-                      </svg>
-                    </button>
-                    <button type="button" className="icon-btn danger" title="Eliminar proyecto" onClick={() => deleteGroup(g.id)}>
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1">
-                        <path d="M2 3h8M4.5 3V1.5h3V3M3 3v7.5h6V3" />
-                      </svg>
-                    </button>
-                  </>
-                )}
-                <button type="button" className="mini-btn group-add" onClick={() => createDiagram(g.id)}>
+                <h2 className="group-name group-name-muted">Sin grupo</h2>
+                <span className="badge badge-muted">{ungrouped.length}</span>
+                <button type="button" className="mini-btn group-add" onClick={() => createDiagram(undefined)}>
                   <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.2">
                     <line x1="5" y1="1" x2="5" y2="9" />
                     <line x1="1" y1="5" x2="9" y2="5" />
@@ -553,39 +595,17 @@ export default function HomePage() {
                   Diagrama
                 </button>
               </div>
-              <div className="diagram-grid">
-                {groupDiagrams.length === 0 && <p className="diagram-empty">Sin diagramas todavía.</p>}
-                {renderDiagramCards(groupDiagrams)}
-              </div>
+              <div className="diagram-grid">{renderDiagramCards(ungrouped)}</div>
             </section>
-          );
-        })}
+          )}
+        </main>
 
-        {}
-        {ungrouped.length > 0 && (
-          <section className="group-section">
-            <div className="group-header">
-              <h2 className="group-name group-name-muted">Sin grupo</h2>
-              <span className="badge badge-muted">{ungrouped.length}</span>
-              <button type="button" className="mini-btn group-add" onClick={() => createDiagram(undefined)}>
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.2">
-                  <line x1="5" y1="1" x2="5" y2="9" />
-                  <line x1="1" y1="5" x2="9" y2="5" />
-                </svg>
-                Diagrama
-              </button>
-            </div>
-            <div className="diagram-grid">{renderDiagramCards(ungrouped)}</div>
-          </section>
-        )}
-      </main>
-
-      {}
-      <footer className="home-footer">
-        <span className="home-footer-text">
-          diagram-web · modelo entidad-relación · datos guardados localmente
-        </span>
-      </footer>
+        <footer className="home-footer">
+          <span className="home-footer-text">
+            dexagram · modelo entidad-relación · datos guardados localmente
+          </span>
+        </footer>
+      </div>
     </div>
   );
 }
