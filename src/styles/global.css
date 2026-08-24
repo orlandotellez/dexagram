@@ -1578,3 +1578,56 @@ body {
   border: 1px solid var(--hairline);
   background: var(--paper);
 }
+
+.confirm-dialog {
+  border: 1px solid var(--hairline);
+  border-radius: 5px;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0;
+  max-width: 400px;
+  width: 90vw;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+}
+
+.confirm-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.confirm-dialog-content {
+  padding: 24px;
+}
+
+.confirm-dialog-title {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+
+.confirm-dialog-message {
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0 0 20px;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.btn-danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: var(--danger-tint);
+  border-color: var(--danger);
+  color: var(--danger);
+}
