@@ -19,31 +19,10 @@ function relativeTime(ts: number | undefined): string {
   return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
 }
 
-function ErDiagramIcon({ className }: { className?: string }) {
+function SquareIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="8" y="14" width="42" height="52" rx="4" stroke="currentColor" strokeWidth="1.2" fill="none" opacity="0.3" />
-      <rect x="8" y="14" width="42" height="14" rx="4" stroke="currentColor" strokeWidth="0.8" fill="currentColor" fillOpacity="0.06" />
-      <rect x="12" y="18" width="14" height="5" rx="1" stroke="currentColor" strokeWidth="0.6" fill="none" opacity="0.4" />
-      <line x1="8" y1="28" x2="50" y2="28" stroke="currentColor" strokeWidth="0.5" opacity="0.2" />
-      <line x1="14" y1="36" x2="44" y2="36" stroke="currentColor" strokeWidth="0.6" opacity="0.2" />
-      <line x1="14" y1="42" x2="44" y2="42" stroke="currentColor" strokeWidth="0.6" opacity="0.2" />
-      <line x1="14" y1="48" x2="38" y2="48" stroke="currentColor" strokeWidth="0.6" opacity="0.2" />
-      <rect x="70" y="8" width="42" height="44" rx="4" stroke="currentColor" strokeWidth="1.2" fill="none" opacity="0.3" />
-      <rect x="70" y="8" width="42" height="14" rx="4" stroke="currentColor" strokeWidth="0.8" fill="currentColor" fillOpacity="0.06" />
-      <rect x="74" y="12" width="12" height="5" rx="1" stroke="currentColor" strokeWidth="0.6" fill="none" opacity="0.4" />
-      <line x1="70" y1="22" x2="112" y2="22" stroke="currentColor" strokeWidth="0.5" opacity="0.2" />
-      <line x1="76" y1="30" x2="106" y2="30" stroke="currentColor" strokeWidth="0.6" opacity="0.2" />
-      <line x1="76" y1="36" x2="106" y2="36" stroke="currentColor" strokeWidth="0.6" opacity="0.2" />
-      <rect x="70" y="48" width="42" height="30" rx="4" stroke="currentColor" strokeWidth="1.2" fill="none" opacity="0.25" />
-      <rect x="70" y="48" width="42" height="14" rx="4" stroke="currentColor" strokeWidth="0.8" fill="currentColor" fillOpacity="0.06" />
-      <rect x="74" y="52" width="14" height="5" rx="1" stroke="currentColor" strokeWidth="0.6" fill="none" opacity="0.35" />
-      <line x1="70" y1="62" x2="112" y2="62" stroke="currentColor" strokeWidth="0.5" opacity="0.15" />
-      <line x1="76" y1="70" x2="100" y2="70" stroke="currentColor" strokeWidth="0.6" opacity="0.15" />
-      <path d="M50 30 Q60 30 60 20 Q60 14 70 14" stroke="currentColor" strokeWidth="0.8" strokeDasharray="3 2" fill="none" opacity="0.35" />
-      <path d="M50 38 Q60 38 60 58 Q60 62 70 58" stroke="currentColor" strokeWidth="0.8" strokeDasharray="3 2" fill="none" opacity="0.3" />
-      <circle cx="70" cy="14" r="2" fill="currentColor" opacity="0.25" />
-      <circle cx="70" cy="58" r="2" fill="currentColor" opacity="0.25" />
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" strokeWidth="2" />
     </svg>
   );
 }
@@ -193,7 +172,6 @@ export default function HomePage() {
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [groupDraft, setGroupDraft] = useState('');
   const [search, setSearch] = useState('');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const importInputRef = useRef<HTMLInputElement>(null);
 
   const sortedDiagrams = useMemo(
@@ -352,26 +330,12 @@ export default function HomePage() {
 
   return (
     <div className="home-layout">
-      <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+      <aside className="sidebar">
         <div className="sidebar-header">
           <div className="sidebar-brand">
-            <ErDiagramIcon className="sidebar-logo" />
-            {sidebarOpen && <span className="sidebar-brand-text">Dexagram</span>}
+            <SquareIcon className="sidebar-logo" />
+            <span className="sidebar-brand-text">Dexagram</span>
           </div>
-          <button
-            type="button"
-            className="sidebar-toggle"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            title={sidebarOpen ? 'Contraer sidebar' : 'Expandir sidebar'}
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-              {sidebarOpen ? (
-                <path d="M10 3L5 8l5 5" />
-              ) : (
-                <path d="M6 3l5 5-5 5" />
-              )}
-            </svg>
-          </button>
         </div>
 
         <div className="sidebar-content">
@@ -380,27 +344,23 @@ export default function HomePage() {
               <line x1="7" y1="1" x2="7" y2="13" />
               <line x1="1" y1="7" x2="13" y2="7" />
             </svg>
-            {sidebarOpen && 'Nuevo diagrama'}
+            Nuevo diagrama
           </button>
 
-          {sidebarOpen && (
-            <button type="button" className="sidebar-btn" onClick={createGroup}>
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.2">
-                <rect x="1" y="2" width="12" height="10" rx="1.5" />
-                <line x1="1" y1="5" x2="13" y2="5" />
-              </svg>
-              Nuevo proyecto
-            </button>
-          )}
+          <button type="button" className="sidebar-btn" onClick={createGroup}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.2">
+              <rect x="1" y="2" width="12" height="10" rx="1.5" />
+              <line x1="1" y1="5" x2="13" y2="5" />
+            </svg>
+            Nuevo proyecto
+          </button>
 
-          {sidebarOpen && (
-            <button type="button" className="sidebar-btn" onClick={() => importInputRef.current?.click()}>
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.2">
-                <path d="M7 1v8M4 6l3 3 3-3M2 11h10" />
-              </svg>
-              Importar
-            </button>
-          )}
+          <button type="button" className="sidebar-btn" onClick={() => importInputRef.current?.click()}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.2">
+              <path d="M7 1v8M4 6l3 3 3-3M2 11h10" />
+            </svg>
+            Importar
+          </button>
           <input
             ref={importInputRef}
             type="file"
@@ -413,7 +373,7 @@ export default function HomePage() {
             }}
           />
 
-          {sidebarOpen && groups.length > 0 && (
+          {groups.length > 0 && (
             <div className="sidebar-section">
               <div className="sidebar-section-title">Proyectos</div>
               {groups.map((g) => {
@@ -497,7 +457,7 @@ export default function HomePage() {
         <main className="home-content">
           {isEmpty && (
             <div className="home-empty-state">
-              <ErDiagramIcon className="home-empty-icon" />
+              <SquareIcon className="home-empty-icon" />
               <h2 className="home-empty-title">Empezá a diseñar</h2>
               <p className="home-empty-text">
                 Creá tu primer diagrama entidad-relación para visualizar el modelo de tu base de datos.
