@@ -3,6 +3,7 @@ export interface Field {
   name: string;
   isPk: boolean;
   isFk: boolean;
+  type?: string;
 }
 
 export interface Entity {

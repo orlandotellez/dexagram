@@ -47,6 +47,9 @@ import {
 } from '../lib/storage';
 import { exportHtml } from '../lib/exportHtml';
 import { parseErHtml } from '../lib/importHtml';
+import { parsePrisma } from '../lib/parsePrisma';
+import { exportPrisma } from '../lib/exportPrisma';
+import { exportSql } from '../lib/exportSql';
 
 function toNodes(diagram: Diagram): EntityNodeType[] {
   return diagram.entities.map((entity) => ({
@@ -574,6 +577,32 @@ export default function ErEditor() {
 
   const entityList = useMemo(() => nodes.map((n) => n.data!.entity), [nodes]);
 
+  const handleImportPrisma = useCallback(
+    (schema: string) => {
+      const result = parsePrisma(schema);
+      // Auto-layout: grid with 280px columns, 200px rows
+      const entities = result.entities.map((e, i) => ({
+        ...e,
+        x: (i % 4) * 280,
+        y: Math.floor(i / 4) * 200,
+      }));
+      // Replace nodes and edges
+      setNodes(entities.map(e => ({ id: e.id, type: 'entity' as const, position: { x: e.x, y: e.y }, data: { entity: e } })));
+      setEdges(result.relations.map(r => ({
+        id: r.id,
+        type: 'relation' as const,
+        source: r.source,
+        target: r.target,
+        data: { relation: r },
+        markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--muted)', width: 14, height: 14 },
+      })));
+      setSelection(null);
+    },
+    [setNodes, setEdges],
+  );
+
+  const exportDiagram = useMemo<Diagram>(() => toDiagram(title, subtitle, nodes, edges), [title, subtitle, nodes, edges]);
+
   if (boot.notFound) {
     return (
       <div className="notfound">
@@ -706,6 +735,8 @@ export default function ErEditor() {
           onUpdateRelation={updateRelation}
           onDeleteRelation={deleteRelation}
           onDeleteEntity={deleteEntity}
+          onImportPrisma={handleImportPrisma}
+          exportData={exportDiagram}
         />
       </div>
 

@@ -527,6 +527,99 @@ body {
   margin: 0;
 }
 
+/* Inspector tabs */
+.insp-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.insp-tab {
+  flex: 1;
+  padding: 8px 0;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+
+.insp-tab:hover {
+  color: var(--ink);
+}
+
+.insp-tab-active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* Code blocks in inspector */
+.insp-code-block {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.insp-code-label {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.insp-code {
+  width: 100%;
+  min-height: 100px;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--hairline);
+  border-radius: 5px;
+  background: var(--input-bg);
+  padding: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--ink);
+  white-space: pre;
+  resize: vertical;
+  margin: 0;
+}
+
+.insp-textarea {
+  width: 100%;
+  min-height: 120px;
+  border: 1px solid var(--hairline);
+  border-radius: 5px;
+  background: var(--input-bg);
+  padding: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--ink);
+  resize: vertical;
+  outline: none;
+}
+
+.insp-textarea:focus {
+  border-color: var(--accent);
+}
+
+.insp-section-title {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-top: 1px solid var(--hairline-soft);
+  padding-top: 12px;
+  margin-bottom: 10px;
+}
+
 .insp-header {
   display: flex;
   align-items: center;
