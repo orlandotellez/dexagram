@@ -28,6 +28,28 @@ interface TableName {
   alias?: string;
 }
 
+interface BodyItem {
+  kind: 'field' | 'inject';
+  text: string;
+}
+
+interface PartialDef {
+  name: string;
+  schema?: string;
+  body: string;
+  key: string;
+}
+
+interface TableDef {
+  entity: Entity;
+  fullName: string;
+  items: BodyItem[];
+  indexes: string;
+}
+
+/** Maximum number of nested `~partial` expansions before a branch stops. */
+const MAX_PARTIAL_DEPTH = 8;
+
 const REF_OPS = ['>', '<', '-', '<>'];
 
 /** Removes `//` and `/* ... *\/` comments while respecting quoted strings. */
@@ -88,7 +110,7 @@ function readBalanced(source: string, openIdx: number): { body: string; end: num
     const ch = source[i];
 
     if (quote) {
-      if (ch === '\\') {
+      if (ch === '\\' && quote !== '`') {
         i += 2;
         continue;
       }
@@ -97,7 +119,7 @@ function readBalanced(source: string, openIdx: number): { body: string; end: num
       continue;
     }
 
-    if (ch === '"' || ch === "'") {
+    if (ch === '"' || ch === "'" || ch === '`') {
       quote = ch;
       i += 1;
       continue;
@@ -134,7 +156,7 @@ function splitTopLevel(source: string): Chunk[] {
 
     if (quote) {
       buf += ch;
-      if (ch === '\\' && i + 1 < source.length) {
+      if (ch === '\\' && quote !== '`' && i + 1 < source.length) {
         buf += source[i + 1];
         i += 2;
         continue;
@@ -144,7 +166,7 @@ function splitTopLevel(source: string): Chunk[] {
       continue;
     }
 
-    if (ch === '"' || ch === "'") {
+    if (ch === '"' || ch === "'" || ch === '`') {
       quote = ch;
       buf += ch;
       i += 1;
@@ -201,7 +223,7 @@ function extractStatements(body: string): string[] {
 
     if (quote) {
       buf += ch;
-      if (ch === '\\' && i + 1 < body.length) {
+      if (ch === '\\' && quote !== '`' && i + 1 < body.length) {
         buf += body[i + 1];
         i += 1;
         continue;
@@ -210,7 +232,7 @@ function extractStatements(body: string): string[] {
       continue;
     }
 
-    if (ch === '"' || ch === "'") {
+    if (ch === '"' || ch === "'" || ch === '`') {
       quote = ch;
       buf += ch;
       continue;
@@ -261,6 +283,51 @@ function extractStatements(body: string): string[] {
   }
 
   return merged;
+}
+
+/** Finds the first `{` in a statement, ignoring braces inside quotes/backticks. */
+function findTopLevelBrace(raw: string): number {
+  let quote: string | null = null;
+
+  for (let i = 0; i < raw.length; i += 1) {
+    const ch = raw[i];
+    if (quote) {
+      if (ch === '\\' && quote !== '`') {
+        i += 1;
+        continue;
+      }
+      if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'" || ch === '`') {
+      quote = ch;
+      continue;
+    }
+    if (ch === '{') return i;
+  }
+
+  return -1;
+}
+
+/**
+ * Returns the header of a nested `Name { ... }` block statement, or null when
+ * the `{` belongs to an attribute value (e.g. `[default: '{}']`).
+ */
+function blockHeaderOf(statement: string): string | null {
+  const brace = findTopLevelBrace(statement);
+  if (brace === -1) return null;
+
+  const attrStart = findAttributeStart(statement);
+  if (attrStart !== -1 && attrStart < brace) return null;
+
+  return statement.slice(0, brace).trim();
+}
+
+/** Returns the inner body of a balanced `Name { ... }` block statement. */
+function extractBlockBody(statement: string): string {
+  const brace = findTopLevelBrace(statement);
+  if (brace === -1) return '';
+  return readBalanced(statement, brace).body;
 }
 
 function unquote(raw: string): string {
@@ -652,6 +719,7 @@ function lookupTable(
 function parseField(
   statement: string,
   entity: Entity,
+  leftTable: string,
   pending: PendingRef[],
 ): void {
   const match = /^(?:"([^"]*)"|([A-Za-z_][\w$]*))\s+([\s\S]*)$/.exec(statement);
@@ -697,7 +765,7 @@ function parseField(
       if (!right) continue;
 
       pending.push({
-        left: { table: entity.name, field: fieldName },
+        left: { table: leftTable, field: fieldName },
         op: operator.op,
         right,
         label: '',
@@ -709,14 +777,14 @@ function parseField(
 function parseTableChunk(
   chunk: Chunk,
   entities: Entity[],
-  pending: PendingRef[],
   byName: Map<string, Entity>,
   byAlias: Map<string, Entity>,
-): void {
+): TableDef | null {
   const headerRest = chunk.header.replace(/^Table\b/i, '').trim();
   const parsed = parseTableHeader(headerRest);
-  if (!parsed) return;
+  if (!parsed) return null;
 
+  const fullName = parsed.schema ? `${parsed.schema}.${parsed.name}` : parsed.name;
   const entity: Entity = {
     id: uid(),
     name: parsed.name,
@@ -726,15 +794,132 @@ function parseTableChunk(
     fields: [],
   };
 
-  byName.set(parsed.name, entity);
-  if (parsed.schema) byName.set(`${parsed.schema}.${parsed.name}`, entity);
+  // A schema-less table also answers to `public.<name>`, but a schema-qualified
+  // table is only reachable through its qualified name (DBML semantics).
+  if (parsed.schema) {
+    byName.set(fullName, entity);
+  } else {
+    byName.set(parsed.name, entity);
+    byName.set(`public.${parsed.name}`, entity);
+  }
   if (parsed.alias) byAlias.set(parsed.alias, entity);
 
   entities.push(entity);
 
+  const items: BodyItem[] = [];
+  let indexes = '';
+
   for (const statement of extractStatements(chunk.body)) {
-    if (/^indexes\b/i.test(statement)) continue;
-    parseField(statement, entity, pending);
+    const blockHeader = blockHeaderOf(statement);
+    if (blockHeader !== null) {
+      if (/^indexes$/i.test(blockHeader)) indexes = extractBlockBody(statement);
+      continue;
+    }
+
+    if (statement.startsWith('~')) {
+      const name = statement.slice(1).trim();
+      if (name) items.push({ kind: 'inject', text: name });
+      continue;
+    }
+
+    items.push({ kind: 'field', text: statement });
+  }
+
+  return { entity, fullName, items, indexes };
+}
+
+function collectPartial(chunk: Chunk, partials: Map<string, PartialDef>): void {
+  const headerRest = chunk.header.replace(/^TablePartial\b/i, '').trim();
+  const parsed = parseTableHeader(headerRest);
+  if (!parsed) return;
+
+  const key = parsed.schema ? `${parsed.schema}.${parsed.name}` : parsed.name;
+  const def: PartialDef = { name: parsed.name, schema: parsed.schema, body: chunk.body, key };
+  partials.set(key, def);
+  partials.set(parsed.name, def);
+}
+
+function lookupPartial(name: string, partials: Map<string, PartialDef>): PartialDef | undefined {
+  const exact = partials.get(name);
+  if (exact) return exact;
+
+  const lower = name.toLowerCase();
+  for (const [key, partial] of partials) {
+    if (key.toLowerCase() === lower) return partial;
+  }
+
+  return undefined;
+}
+
+function toBodyItems(statements: string[]): BodyItem[] {
+  const items: BodyItem[] = [];
+
+  for (const statement of statements) {
+    if (blockHeaderOf(statement) !== null) continue;
+
+    if (statement.startsWith('~')) {
+      const name = statement.slice(1).trim();
+      if (name) items.push({ kind: 'inject', text: name });
+      continue;
+    }
+
+    items.push({ kind: 'field', text: statement });
+  }
+
+  return items;
+}
+
+/** Materializes an entity's fields, expanding `~partial` injections in place. */
+function materializeFields(
+  def: TableDef,
+  partials: Map<string, PartialDef>,
+  pending: PendingRef[],
+): void {
+  const visit = (items: BodyItem[], depth: number, stack: Set<string>): void => {
+    for (const item of items) {
+      if (item.kind === 'field') {
+        parseField(item.text, def.entity, def.fullName, pending);
+        continue;
+      }
+
+      if (depth >= MAX_PARTIAL_DEPTH) continue;
+      const partial = lookupPartial(item.text, partials);
+      if (!partial || stack.has(partial.key)) continue;
+
+      const nextStack = new Set(stack);
+      nextStack.add(partial.key);
+      visit(toBodyItems(extractStatements(partial.body)), depth + 1, nextStack);
+    }
+  };
+
+  visit(def.items, 0, new Set());
+}
+
+/** Marks `isPk` on every existing field listed by a `[pk]` entry in Indexes. */
+function applyIndexesPk(entity: Entity, body: string): void {
+  if (!body) return;
+
+  for (const entry of extractStatements(body)) {
+    const attrStart = findAttributeStart(entry);
+    if (attrStart === -1) continue;
+
+    const groups = extractBracketGroups(entry.slice(attrStart));
+    const isPk = groups.some((group) =>
+      splitTopLevelCommas(group).some((attr) => /^(pk|primary\s+key)$/i.test(attr.trim())),
+    );
+    if (!isPk) continue;
+
+    const target = entry.slice(0, attrStart).trim();
+    const names = target.startsWith('(')
+      ? target.replace(/^\(/, '').replace(/\)$/, '').split(',')
+      : [target];
+
+    for (const rawName of names) {
+      const name = unquote(rawName);
+      if (!name) continue;
+      const field = lookupField(entity, name);
+      if (field) field.isPk = true;
+    }
   }
 }
 
@@ -847,14 +1032,30 @@ export function parseDbml(source: string): DbmlParseResult {
 
   try {
     const cleaned = stripComments(source ?? '');
+    const chunks = splitTopLevel(cleaned);
 
-    for (const chunk of splitTopLevel(cleaned)) {
-      if (/^Table\b/i.test(chunk.header)) {
-        parseTableChunk(chunk, entities, pending, byName, byAlias);
+    const partials = new Map<string, PartialDef>();
+    const tables: TableDef[] = [];
+    const refChunks: Chunk[] = [];
+
+    for (const chunk of chunks) {
+      if (/^TablePartial\b/i.test(chunk.header)) {
+        collectPartial(chunk, partials);
+      } else if (/^Table\b/i.test(chunk.header)) {
+        const def = parseTableChunk(chunk, entities, byName, byAlias);
+        if (def) tables.push(def);
       } else if (/^Ref\b/i.test(chunk.header)) {
-        parseRefChunk(chunk, pending);
+        refChunks.push(chunk);
       }
     }
+
+    // Order matters: parse tables -> inject partials -> apply Indexes PKs -> resolve refs.
+    for (const def of tables) {
+      materializeFields(def, partials, pending);
+      applyIndexesPk(def.entity, def.indexes);
+    }
+
+    for (const chunk of refChunks) parseRefChunk(chunk, pending);
 
     return { entities, relations: resolveRelations(pending, byName, byAlias) };
   } catch {
