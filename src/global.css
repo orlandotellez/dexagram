@@ -539,6 +539,10 @@ body {
   color: var(--danger);
 }
 
+.insp-hint-ok {
+  color: var(--accent);
+}
+
 /* Inspector tabs */
 .insp-tabs {
   display: flex;

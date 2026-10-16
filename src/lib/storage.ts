@@ -4,6 +4,7 @@ import { seedSalud, uid } from "./model";
 const LS_LIST = "dexagram:diagrams";
 const LS_GROUPS = "dexagram:groups";
 const LS_LEGACY = "dexagram:diagram";
+const LS_IMPORT_DRAFTS = "dexagram:import-drafts";
 
 function safeParse<T>(raw: string | null): T | null {
   if (!raw) return null;
@@ -66,6 +67,33 @@ export function saveGroups(list: Group[]): void {
     localStorage.setItem(LS_GROUPS, JSON.stringify(list));
   } catch {
     // quota exceeded
+  }
+}
+
+/**
+ * Scratch buffers for the inspector's import panels. They are kept apart from
+ * the diagram data on purpose: a schema being pasted is not part of the model,
+ * it is the input used to generate one.
+ */
+export interface ImportDrafts {
+  dbml: string;
+  prisma: string;
+}
+
+export function readImportDrafts(): ImportDrafts {
+  const parsed = safeParse<Partial<ImportDrafts>>(localStorage.getItem(LS_IMPORT_DRAFTS));
+  if (!parsed || typeof parsed !== 'object') return { dbml: '', prisma: '' };
+  return {
+    dbml: typeof parsed.dbml === 'string' ? parsed.dbml : '',
+    prisma: typeof parsed.prisma === 'string' ? parsed.prisma : '',
+  };
+}
+
+export function saveImportDrafts(drafts: ImportDrafts): void {
+  try {
+    localStorage.setItem(LS_IMPORT_DRAFTS, JSON.stringify(drafts));
+  } catch {
+    // quota exceeded — a long schema must never break the editor
   }
 }
 

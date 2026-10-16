@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from 'react';
 import type { Entity, Field, Relation, Diagram, Side } from '../lib/model';
 import { uid } from '../lib/model';
 import { concreteSide } from '../lib/sides';
+import { readImportDrafts, saveImportDrafts, type ImportDrafts } from '../lib/storage';
 import { exportPrisma } from '../lib/exportPrisma';
 import { exportSql } from '../lib/exportSql';
 
@@ -26,22 +27,32 @@ interface InspectorProps {
   exportData?: Diagram | null;
 }
 
-function DbmlImport({ onImport }: { onImport: (dbml: string) => number }) {
-  const [text, setText] = useState('');
+function DbmlImport({
+  onImport,
+  value,
+  onChange,
+}: {
+  onImport: (dbml: string) => number;
+  value: string;
+  onChange: (v: string) => void;
+}) {
   const [error, setError] = useState('');
+  const [result, setResult] = useState('');
 
   const handleGenerate = () => {
-    const value = text.trim();
-    if (!value) return;
-    const imported = onImport(value);
+    const dbml = value.trim();
+    if (!dbml) return;
+    const imported = onImport(dbml);
     // The parser never throws, so unparseable input arrives as zero entities.
-    // Keep the text so the schema can be fixed instead of wiping the diagram.
+    // The pasted source is kept in BOTH outcomes: a long schema has to stay
+    // editable so it can be fixed and regenerated without re-pasting.
     if (imported === 0) {
+      setResult('');
       setError('No se reconoció ninguna tabla en el DBML. Revisá el esquema.');
       return;
     }
     setError('');
-    setText('');
+    setResult(`${imported} tabla${imported === 1 ? '' : 's'} importada${imported === 1 ? '' : 's'}.`);
   };
 
   return (
@@ -50,15 +61,18 @@ function DbmlImport({ onImport }: { onImport: (dbml: string) => number }) {
       <textarea
         className="insp-textarea"
         rows={6}
-        value={text}
+        value={value}
         placeholder="Pegá tu esquema DBML acá..."
         onChange={(e) => {
-          setText(e.target.value);
+          onChange(e.target.value);
           if (error) setError('');
+          if (result) setResult('');
         }}
       />
       {error ? (
         <p className="insp-hint insp-hint-error">{error}</p>
+      ) : result ? (
+        <p className="insp-hint insp-hint-ok">{result}</p>
       ) : (
         <p className="insp-hint">Reemplaza el diagrama actual.</p>
       )}
@@ -66,7 +80,7 @@ function DbmlImport({ onImport }: { onImport: (dbml: string) => number }) {
         type="button"
         className="mini-btn mini-btn-link"
         style={{ marginTop: 8 }}
-        disabled={!text.trim()}
+        disabled={!value.trim()}
         onClick={handleGenerate}
       >
         Generar diagrama
@@ -183,7 +197,16 @@ export function Inspector({
   exportData,
 }: InspectorProps) {
   const [tab, setTab] = useState<'entity' | 'import-export'>('entity');
-  const [importText, setImportText] = useState('');
+  // Both import panels (DBML and Prisma) share one persisted scratch buffer, so a
+  // pasted schema survives leaving the Importar / Exportar tab and a page reload.
+  const [drafts, setDrafts] = useState<ImportDrafts>(readImportDrafts);
+  const updateDrafts = useCallback((patch: Partial<ImportDrafts>) => {
+    setDrafts((prev) => {
+      const next = { ...prev, ...patch };
+      saveImportDrafts(next);
+      return next;
+    });
+  }, []);
 
   const handleCopyPrisma = useCallback(async () => {
     if (!exportData) return;
@@ -196,11 +219,10 @@ export function Inspector({
   }, [exportData]);
 
   const handleImport = useCallback(() => {
-    if (importText.trim() && onImportPrisma) {
-      onImportPrisma(importText);
-      setImportText('');
+    if (drafts.prisma.trim() && onImportPrisma) {
+      onImportPrisma(drafts.prisma);
     }
-  }, [importText, onImportPrisma]);
+  }, [drafts.prisma, onImportPrisma]);
 
   const prismaCode = useMemo(() => exportData ? exportPrisma(exportData) : '', [exportData]);
   const sqlCode = useMemo(() => exportData ? exportSql(exportData) : '', [exportData]);
@@ -235,18 +257,9 @@ export function Inspector({
       </div>
 
       {tab === 'entity' && !selection && (
-        onImportDbml ? (
-          <div>
-            <p className="inspector-empty">
-              Seleccioná una entidad para editarla, o pegá DBML y generá el diagrama.
-            </p>
-            <DbmlImport onImport={onImportDbml} />
-          </div>
-        ) : (
-          <p className="inspector-empty">
-            Selecciona una entidad o una relacion para editarla.
-          </p>
-        )
+        <p className="inspector-empty">
+          Seleccioná una entidad o una relación para editarla.
+        </p>
       )}
 
       {tab === 'entity' && isEntity && entity && entityId && (
@@ -443,9 +456,9 @@ export function Inspector({
               <textarea
                 className="insp-textarea"
                 rows={6}
-                value={importText}
+                value={drafts.prisma}
                 placeholder="Pega tu esquema Prisma aqui..."
-                onChange={(e) => setImportText(e.target.value)}
+                onChange={(e) => updateDrafts({ prisma: e.target.value })}
               />
               <button
                 type="button"
@@ -458,7 +471,13 @@ export function Inspector({
             </div>
           )}
 
-          {onImportDbml && <DbmlImport onImport={onImportDbml} />}
+          {onImportDbml && (
+            <DbmlImport
+              onImport={onImportDbml}
+              value={drafts.dbml}
+              onChange={(v) => updateDrafts({ dbml: v })}
+            />
+          )}
 
           {exportData && (
             <>
