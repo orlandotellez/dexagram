@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useContext } from 'react';
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -7,6 +7,7 @@ import {
   type EdgeProps,
 } from '@xyflow/react';
 import type { Relation } from '../lib/model';
+import { RelationActionsContext } from './relationActions';
 
 export type RelationEdgeData = { relation: Relation };
 export type RelationEdgeType = Edge<RelationEdgeData, 'relation'>;
@@ -24,6 +25,7 @@ function RelationEdgeComponent({
   markerEnd,
 }: EdgeProps<RelationEdgeType>) {
   const relation = data?.relation;
+  const relationActions = useContext(RelationActionsContext);
   const [path, labelX, labelY] = getSmoothStepPath({
     sourceX,
     sourceY,
@@ -77,6 +79,21 @@ function RelationEdgeComponent({
               {relation.targetCard}
             </div>
           </>
+        )}
+        {selected && relationActions && (
+          <button
+            type="button"
+            className="er-edge-action nodrag nopan"
+            style={{ transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY + 16}px)` }}
+            title="Invertir lados (F)"
+            aria-label="Invertir lados de la relación"
+            onClick={(e) => {
+              e.stopPropagation();
+              relationActions.flip(id);
+            }}
+          >
+            ⇄
+          </button>
         )}
       </EdgeLabelRenderer>
     </>

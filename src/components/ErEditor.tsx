@@ -19,6 +19,7 @@ import '@xyflow/react/dist/style.css';
 
 import EntityNode, { type EntityNodeType } from './EntityNode';
 import RelationEdge, { type RelationEdgeType } from './RelationEdge';
+import { RelationActionsContext } from './relationActions';
 import { Inspector, type Selection } from './Inspector';
 import { ShapePalette, type ShapeKind } from './ShapePalette';
 import ThemeSwitcher from './ThemeSwitcher';
@@ -31,12 +32,12 @@ import {
   type Field,
   type FieldHandleInfo,
   type Relation,
-  fieldHandleId,
   normalizeSlug,
   parseFieldHandle,
   uid,
   uniqueSlug,
 } from '../lib/model';
+import { flipRelationSides, sideHandle, sideOfHandle } from '../lib/sides';
 import {
   downloadFile,
   downloadJson,
@@ -59,35 +60,6 @@ function toNodes(diagram: Diagram): EntityNodeType[] {
     position: { x: entity.x, y: entity.y },
     data: { entity },
   }));
-}
-
-function sideOfHandle(handleId: string | null | undefined): 'L' | 'R' | undefined {
-  if (!handleId) return undefined;
-  const m = /^f:[^:]+:([LR]):/.exec(handleId);
-  if (m) return m[1] as 'L' | 'R';
-  if (handleId === 'sl' || handleId === 'tl') return 'L';
-  if (handleId === 'sr' || handleId === 'tr') return 'R';
-  return undefined;
-}
-
-/** Lado automático según la posición relativa de las entidades. */
-function autoSide(rel: Relation, byId?: Map<string, Entity>): { sourceSide?: 'L' | 'R'; targetSide?: 'L' | 'R' } {
-  const src = byId?.get(rel.source);
-  const dst = byId?.get(rel.target);
-  if (!src || !dst) return {};
-  return src.x <= dst.x ? { sourceSide: 'R', targetSide: 'L' } : { sourceSide: 'L', targetSide: 'R' };
-}
-
-function sideHandle(rel: Relation, end: 'source' | 'target', byId?: Map<string, Entity>): string | undefined {
-  const auto = autoSide(rel, byId);
-  if (end === 'source') {
-    const side = rel.sourceFieldId ? (rel.sourceSide ?? auto.sourceSide ?? 'R') : (rel.sourceSide ?? auto.sourceSide);
-    if (rel.sourceFieldId) return fieldHandleId(rel.sourceFieldId, side!, 'src');
-    return side === 'L' ? 'sl' : side === 'R' ? 'sr' : undefined;
-  }
-  const side = rel.targetFieldId ? (rel.targetSide ?? auto.targetSide ?? 'L') : (rel.targetSide ?? auto.targetSide);
-  if (rel.targetFieldId) return fieldHandleId(rel.targetFieldId, side!, 'tgt');
-  return side === 'L' ? 'tl' : side === 'R' ? 'tr' : undefined;
 }
 
 function toEdges(diagram: Diagram): RelationEdgeType[] {
@@ -187,6 +159,8 @@ export default function ErEditor() {
 
   const nodeTypes = useMemo(() => ({ entity: EntityNode }), []);
   const edgeTypes = useMemo(() => ({ relation: RelationEdge }), []);
+  const entityList = useMemo(() => nodes.map((n) => n.data!.entity), [nodes]);
+  const entityById = useMemo(() => new Map(entityList.map((e) => [e.id, e])), [entityList]);
 
   const handleTitleChange = (v: string) => setTitle(v);
   const handleSubtitleChange = (v: string) => setSubtitle(v);
@@ -314,8 +288,8 @@ export default function ErEditor() {
             type: 'relation',
             source: conn.source,
             target: conn.target,
-            sourceHandle: sideHandle(relation, 'source'),
-            targetHandle: sideHandle(relation, 'target'),
+            sourceHandle: sideHandle(relation, 'source', entityById),
+            targetHandle: sideHandle(relation, 'target', entityById),
             data: { relation },
             markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--muted)', width: 14, height: 14 },
           },
@@ -323,7 +297,7 @@ export default function ErEditor() {
         );
       });
     },
-    [setEdges],
+    [setEdges, entityById],
   );
 
   const handleReconnect = useCallback(
@@ -345,8 +319,8 @@ export default function ErEditor() {
           ...e,
           source: conn.source,
           target: conn.target,
-          sourceHandle: sideHandle(relation, 'source'),
-          targetHandle: sideHandle(relation, 'target'),
+          sourceHandle: sideHandle(relation, 'source', entityById),
+          targetHandle: sideHandle(relation, 'target', entityById),
           data: { relation },
         };
       };
@@ -371,7 +345,7 @@ export default function ErEditor() {
           : sel,
       );
     },
-    [setEdges],
+    [setEdges, entityById],
   );
 
   const handleSelectionChange = useCallback(({ nodes: selNodes, edges: selEdges }: { nodes: EntityNodeType[]; edges: RelationEdgeType[] }) => {
@@ -467,15 +441,15 @@ export default function ErEditor() {
             ...e,
             source: relation.source,
             target: relation.target,
-            sourceHandle: sideHandle(relation, 'source'),
-            targetHandle: sideHandle(relation, 'target'),
+            sourceHandle: sideHandle(relation, 'source', entityById),
+            targetHandle: sideHandle(relation, 'target', entityById),
             data: { relation },
           };
         }),
       );
       setSelection((sel) => (sel && sel.kind === 'relation' && sel.id === id ? { ...sel, relation: { ...sel.relation, ...patch } } : sel));
     },
-    [setEdges],
+    [setEdges, entityById],
   );
 
   const deleteRelation = useCallback(
@@ -485,6 +459,43 @@ export default function ErEditor() {
     },
     [setEdges],
   );
+
+  const flipRelation = useCallback((id: string) => {
+    const byId = new Map(entityList.map((e) => [e.id, e]));
+    setEdges((eds) =>
+      eds.map((e) => {
+        if (e.id !== id) return e;
+        const relation = flipRelationSides(e.data!.relation, byId);
+        return {
+          ...e,
+          sourceHandle: sideHandle(relation, 'source', byId),
+          targetHandle: sideHandle(relation, 'target', byId),
+          data: { relation },
+        };
+      }),
+    );
+    setSelection((sel) => {
+      if (!sel || sel.kind !== 'relation' || sel.id !== id) return sel;
+      const relation = flipRelationSides(sel.relation, byId);
+      return { ...sel, relation };
+    });
+  }, [entityList, setEdges, setSelection]);
+
+  const relationActions = useMemo(() => ({ flip: flipRelation }), [flipRelation]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key !== 'f' && e.key !== 'F') return;
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)) return;
+      if (selection?.kind !== 'relation') return;
+      e.preventDefault();
+      flipRelation(selection.id);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [selection, flipRelation]);
 
   const handleExport = useCallback(() => {
     const d = toDiagram(title, subtitle, nodes, edges);
@@ -575,8 +586,6 @@ export default function ErEditor() {
     },
     [addShape],
   );
-
-  const entityList = useMemo(() => nodes.map((n) => n.data!.entity), [nodes]);
 
   const applyImport = useCallback(
     (result: { entities: Entity[]; relations: Relation[] }) => {
@@ -707,39 +716,41 @@ export default function ErEditor() {
       <div className="editor-body">
         <ShapePalette onAdd={(kind) => addShape(kind)} />
         <div className="canvas" ref={canvasRef}>
-          <ReactFlow<EntityNodeType, RelationEdgeType>
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={handleNodesChange}
-            onEdgesChange={handleEdgesChange}
-            onConnect={handleConnect}
-            onReconnect={handleReconnect}
-            onSelectionChange={handleSelectionChange}
-            onInit={(inst) => {
-              rfRef.current = inst;
-            }}
-            onDragOver={onDragOver}
-            onDrop={onDrop}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
-            fitView
-            fitViewOptions={{ padding: 0.15 }}
-            minZoom={0.15}
-            maxZoom={2}
-            deleteKeyCode={['Backspace', 'Delete']}
-            reconnectRadius={14}
-            proOptions={{ hideAttribution: false }}
-          >
-            <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="var(--dot-color)" />
-            <Controls />
-            <MiniMap
-              nodeColor={(n) => ((n.data as { entity?: Entity }).entity?.focal ? 'var(--accent)' : 'var(--node-bg)')}
-              nodeStrokeWidth={2}
-              maskColor="var(--minimap-mask)"
-              pannable
-              zoomable
-            />
-          </ReactFlow>
+          <RelationActionsContext.Provider value={relationActions}>
+            <ReactFlow<EntityNodeType, RelationEdgeType>
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={handleNodesChange}
+              onEdgesChange={handleEdgesChange}
+              onConnect={handleConnect}
+              onReconnect={handleReconnect}
+              onSelectionChange={handleSelectionChange}
+              onInit={(inst) => {
+                rfRef.current = inst;
+              }}
+              onDragOver={onDragOver}
+              onDrop={onDrop}
+              nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
+              fitView
+              fitViewOptions={{ padding: 0.15 }}
+              minZoom={0.15}
+              maxZoom={2}
+              deleteKeyCode={['Backspace', 'Delete']}
+              reconnectRadius={14}
+              proOptions={{ hideAttribution: false }}
+            >
+              <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="var(--dot-color)" />
+              <Controls />
+              <MiniMap
+                nodeColor={(n) => ((n.data as { entity?: Entity }).entity?.focal ? 'var(--accent)' : 'var(--node-bg)')}
+                nodeStrokeWidth={2}
+                maskColor="var(--minimap-mask)"
+                pannable
+                zoomable
+              />
+            </ReactFlow>
+          </RelationActionsContext.Provider>
         </div>
         <Inspector
           selection={selection}
@@ -750,6 +761,7 @@ export default function ErEditor() {
           onRemoveField={removeField}
           onUpdateRelation={updateRelation}
           onDeleteRelation={deleteRelation}
+          onFlipRelation={flipRelation}
           onDeleteEntity={deleteEntity}
           onImportPrisma={handleImportPrisma}
           onImportDbml={handleImportDbml}
@@ -760,7 +772,8 @@ export default function ErEditor() {
       <div className="canvas-hint">
         <span>
           Arrastrá formas de la paleta · conectá desde un punto (◦) de un campo · arrastrá un extremo de una línea para
-          moverla · borrá con Supr
+          moverla · con una relación seleccionada, tocá ⇄ o presioná F para invertir sus lados (o elegí Auto / Izq / Der en
+          el inspector) · borrá con Supr
         </span>
         <span className="canvas-hint-right">Dexagram — editor ER</span>
       </div>

@@ -774,6 +774,44 @@ body {
   color: var(--accent);
 }
 
+.insp-seg {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.insp-seg-btn {
+  flex: 1;
+  border: 1px solid var(--hairline);
+  border-radius: 5px;
+  background: var(--input-bg);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--muted);
+  padding: 5px 0;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.insp-seg-btn:hover {
+  background: var(--paper-2);
+}
+
+.insp-seg-btn.active {
+  background: var(--accent-tint);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.insp-hint {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--muted);
+  opacity: 0.75;
+}
+
 .insp-label select.insp-input {
   appearance: none;
   background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
@@ -1027,6 +1065,31 @@ body {
 .er-edge-rel {
   color: var(--soft);
   letter-spacing: 0.06em;
+}
+
+.er-edge-action {
+  position: absolute;
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--hairline);
+  border-radius: 5px;
+  background: var(--paper);
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.er-edge-action:hover {
+  background: var(--paper-2);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 

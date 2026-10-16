@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
-import type { Entity, Field, Relation, Diagram } from '../lib/model';
+import type { Entity, Field, Relation, Diagram, Side } from '../lib/model';
 import { uid } from '../lib/model';
+import { concreteSide } from '../lib/sides';
 import { exportPrisma } from '../lib/exportPrisma';
 import { exportSql } from '../lib/exportSql';
 
@@ -18,6 +19,7 @@ interface InspectorProps {
   onRemoveField: (entityId: string, fieldId: string) => void;
   onUpdateRelation: (id: string, patch: Partial<Relation>) => void;
   onDeleteRelation: (id: string) => void;
+  onFlipRelation?: (id: string) => void;
   onDeleteEntity: (id: string) => void;
   onImportPrisma?: (schema: string) => void;
   onImportDbml?: (dbml: string) => number;
@@ -113,6 +115,43 @@ function FieldRow({
   );
 }
 
+function SideSegmented({
+  value,
+  onChange,
+}: {
+  value: Side | undefined;
+  onChange: (v: Side | undefined) => void;
+}) {
+  return (
+    <div className="insp-seg" role="group">
+      <button
+        type="button"
+        className={`insp-seg-btn${value === undefined ? ' active' : ''}`}
+        aria-pressed={value === undefined}
+        onClick={() => onChange(undefined)}
+      >
+        Auto
+      </button>
+      <button
+        type="button"
+        className={`insp-seg-btn${value === 'L' ? ' active' : ''}`}
+        aria-pressed={value === 'L'}
+        onClick={() => onChange('L')}
+      >
+        ◀ Izq
+      </button>
+      <button
+        type="button"
+        className={`insp-seg-btn${value === 'R' ? ' active' : ''}`}
+        aria-pressed={value === 'R'}
+        onClick={() => onChange('R')}
+      >
+        Der ▶
+      </button>
+    </div>
+  );
+}
+
 async function copyToClipboard(text: string) {
   try {
     await navigator.clipboard.writeText(text);
@@ -137,6 +176,7 @@ export function Inspector({
   onRemoveField,
   onUpdateRelation,
   onDeleteRelation,
+  onFlipRelation,
   onDeleteEntity,
   onImportPrisma,
   onImportDbml,
@@ -173,6 +213,7 @@ export function Inspector({
   const relationId = isRelation ? selection.id : null;
   const srcEntity = relation ? entities.find((e) => e.id === relation.source) : null;
   const dstEntity = relation ? entities.find((e) => e.id === relation.target) : null;
+  const byId = useMemo(() => new Map(entities.map((e) => [e.id, e])), [entities]);
 
   return (
     <aside className="inspector">
@@ -308,6 +349,41 @@ export function Inspector({
               onChange={(e) => onUpdateRelation(relationId, { label: e.target.value.toUpperCase() })}
             />
           </label>
+
+          <div className="insp-subheader">
+            <span>Lados</span>
+            {onFlipRelation && (
+              <button type="button" className="mini-btn" onClick={() => onFlipRelation(relationId)}>
+                ⇄ Invertir
+              </button>
+            )}
+          </div>
+
+          <div className="insp-label">
+            Lado origen{srcEntity ? ` (${srcEntity.name})` : ''}
+            <SideSegmented
+              value={relation.sourceSide}
+              onChange={(v) => onUpdateRelation(relationId, { sourceSide: v })}
+            />
+            {relation.sourceSide === undefined && (
+              <span className="insp-hint">
+                Auto · ahora {concreteSide(relation, 'source', byId) === 'L' ? 'Izquierda' : 'Derecha'}
+              </span>
+            )}
+          </div>
+
+          <div className="insp-label">
+            Lado destino{dstEntity ? ` (${dstEntity.name})` : ''}
+            <SideSegmented
+              value={relation.targetSide}
+              onChange={(v) => onUpdateRelation(relationId, { targetSide: v })}
+            />
+            {relation.targetSide === undefined && (
+              <span className="insp-hint">
+                Auto · ahora {concreteSide(relation, 'target', byId) === 'L' ? 'Izquierda' : 'Derecha'}
+              </span>
+            )}
+          </div>
 
           <div className="insp-subheader">
             <span>Conexion</span>

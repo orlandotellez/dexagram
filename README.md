@@ -16,7 +16,7 @@ Aplicación de escritorio + web para diseñar y documentar **modelos entidad-rel
 | **Mis diagramas** | Listado de diagramas agrupados por **proyectos** (grupos). Crear, renombrar, duplicar, mover entre proyectos y eliminar (con confirmación). |
 | **Editor ER** | Lienzo infinito con zoom/pan. Agregar **Entidades** y **Entidades focales** (raíz del dominio) desde la paleta, por clic o arrastrando. |
 | **Campos** | Cada entidad lista sus campos; marcar `#` (clave primaria) o `→` (clave foránea) desde el inspector. |
-| **Relaciones** | Conectar **puntos laterales** de la entidad o **puntos por campo**. Cada relación guarda cardinalidad en ambos extremos (`1`, `N`, …), etiqueta (p. ej. `TIENE`) y campo de origen/destino. Los lados se eligen solos: se toman del punto que agarrás y se recalculan por geometría si faltan. |
+| **Relaciones** | Conectar **puntos laterales** de la entidad o **puntos por campo**. Cada relación guarda cardinalidad en ambos extremos (`1`, `N`, …), etiqueta (p. ej. `TIENE`) y campo de origen/destino. Los lados se eligen solos por geometría, pero podés invertirlos con el `⇄` sobre la línea seleccionada, la tecla `F`, o el control `Auto | Izq | Der` del inspector; `Auto` la devuelve a la colocación geométrica. |
 | **Inspector** | Al seleccionar una entidad: nombre, tabla, campos, raíz del dominio. Al seleccionar una relación: cardinalidades, etiqueta y campos conectados. |
 | **Vista previa** | Botón **Vista previa** en el editor: abre un modal con el diagrama renderizado tal cual saldría exportado, con los colores del tema actual. |
 | **Exportar / Importar** | **Exportar HTML**: archivo único, autocontenido (SVG + CSS inline) con leyenda `#`, `→`, `1:1`, `1:N`. **Guardar JSON**: backup editable. **Importar**: acepta JSON o HTML exportado. **Importar DBML**: pegá un esquema DBML (tablas + `Ref` + `Records`) y genera el diagrama; sin nada seleccionado, el inspector muestra el cuadro para pegar DBML. |
@@ -59,7 +59,8 @@ Los scripts equivalentes con `npm` también existen en `package.json`.
 4. Arrastrá desde un **punto (◦) de un campo o de un costado** hasta el punto de otra entidad para crear la relación.
 5. Borrá elementos con `Supr`/`Backspace` o desde el inspector.
 6. Con **nada seleccionado**, pegá tu esquema **DBML** en el inspector y tocá **Generar diagrama** para crear entidades y relaciones de una vez (también está en la pestaña **Importar / Exportar**, junto a la importación de Prisma).
-7. **Vista previa** para ver el resultado y **Exportar HTML** para compartirlo/documentarlo.
+7. Con una relación seleccionada, invertí sus lados con el `⇄` sobre la línea, la tecla `F`, o el control `Auto | Izq | Der` del inspector; `Auto` la devuelve a la colocación geométrica.
+8. **Vista previa** para ver el resultado y **Exportar HTML** para compartirlo/documentarlo.
 
 > Los puntos de conexión de cada campo y los laterales de la entidad son los círculos visibles; no hay puntos arriba/abajo.
 
