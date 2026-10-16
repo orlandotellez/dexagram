@@ -13,7 +13,7 @@ Aplicación de escritorio + web para diseñar y documentar **modelos entidad-rel
 
 | Área | Qué hace |
 | --- | --- |
-| **Mis diagramas** | Listado de diagramas agrupados por **proyectos** (grupos). Crear, renombrar, duplicar, mover entre proyectos y eliminar (con confirmación). |
+| **Mis diagramas** | Cabecera en dos niveles: arriba la marca junto a `Nuevo proyecto`, `Importar` y el selector de tema; abajo el título y el conteo de diagramas y proyectos. La barra lateral ya no existe. Modelo **un proyecto = un diagrama**: al crear un proyecto nace su diagrama. Renombrar, duplicar, mover entre proyectos y eliminar se hacen sobre la tarjeta (con confirmación). |
 | **Editor ER** | Lienzo infinito con zoom/pan. Agregar **Entidades** y **Entidades focales** (raíz del dominio) desde la paleta, por clic o arrastrando. |
 | **Campos** | Cada entidad lista sus campos; marcar `#` (clave primaria) o `→` (clave foránea) desde el inspector. |
 | **Relaciones** | Conectar **puntos laterales** de la entidad o **puntos por campo**. Cada relación guarda cardinalidad en ambos extremos (`1`, `N`, …), etiqueta (p. ej. `TIENE`) y campo de origen/destino. Los lados se eligen solos por geometría, pero podés invertirlos con el `⇄` sobre la línea seleccionada, la tecla `F`, o el control `Auto | Izq | Der` del inspector; `Auto` la devuelve a la colocación geométrica. |
@@ -53,7 +53,7 @@ Los scripts equivalentes con `npm` también existen en `package.json`.
 
 ## Uso rápido
 
-1. En **Mis diagramas**, creá un proyecto y/o un diagrama (hay un modelo de ejemplo de salud al primer arranque).
+1. En **Mis diagramas**, tocá **Nuevo proyecto** en la cabecera: se crea el proyecto con su diagrama y el nombre te queda listo para editar. **Importar** también crea un proyecto a partir del archivo (JSON o HTML exportado). Hay un modelo de ejemplo de salud al primer arranque.
 2. Entrá al diagrama y arrastrá una **Entidad** o **Entidad focal** desde la paleta izquierda.
 3. En el **inspector derecho**, poné nombre, tabla y campos; marcá `#`/`→` según corresponda.
 4. Arrastrá desde un **punto (◦) de un campo o de un costado** hasta el punto de otra entidad para crear la relación.

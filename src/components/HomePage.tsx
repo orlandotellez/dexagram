@@ -189,7 +189,6 @@ export default function HomePage() {
   const [diagrams, setDiagrams] = useState<Diagram[]>(boot.diagrams);
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [groupDraft, setGroupDraft] = useState('');
-  const [search, setSearch] = useState('');
   const importInputRef = useRef<HTMLInputElement>(null);
 
   const [dialog, setDialog] = useState<DialogState>({
@@ -226,32 +225,31 @@ export default function HomePage() {
     [diagrams],
   );
 
-  const filteredDiagrams = useMemo(() => {
-    if (!search.trim()) return sortedDiagrams;
-    const q = search.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return sortedDiagrams.filter((d) => {
-      const hay = (d.title + ' ' + d.subtitle).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      return hay.includes(q);
-    });
-  }, [sortedDiagrams, search]);
-
   const byGroup = useMemo(() => {
     const map = new Map<string | null, Diagram[]>();
-    for (const d of filteredDiagrams) {
+    for (const d of sortedDiagrams) {
       const key = d.groupId ?? null;
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(d);
     }
     return map;
-  }, [filteredDiagrams]);
+  }, [sortedDiagrams]);
   const ungrouped = byGroup.get(null) ?? [];
 
-  const createGroup = () => {
+  const createProject = () => {
     const n = groups.length + 1;
     const g: Group = { id: uid(), name: `Proyecto ${n}`, createdAt: Date.now() };
+    const d: Diagram = { ...emptyDiagram(), id: uid(), groupId: g.id, savedAt: Date.now() };
+    // Prepend both so the new project sits at the top of the content, directly under the header.
+    // That keeps its inline rename input visible without scrolling in a long list.
     setGroups((prev) => {
-      const next = [...prev, g];
+      const next = [g, ...prev];
       saveGroups(next);
+      return next;
+    });
+    setDiagrams((prev) => {
+      const next = [d, ...prev];
+      saveDiagrams(next);
       return next;
     });
     setGroupDraft(g.name);
@@ -294,16 +292,6 @@ export default function HomePage() {
         closeConfirm();
       },
     });
-  };
-
-  const createDiagram = (groupId: string | undefined) => {
-    const d: Diagram = { ...emptyDiagram(), id: uid(), groupId, savedAt: Date.now() };
-    setDiagrams((prev) => {
-      const next = [d, ...prev];
-      saveDiagrams(next);
-      return next;
-    });
-    navigate(`/diagrama/${d.id}`);
   };
 
   const duplicateDiagram = (id: string) => {
@@ -362,7 +350,17 @@ export default function HomePage() {
     try {
       const isHtml = /\.html?$/i.test(file.name) || file.type.includes('html');
       const d = isHtml ? parseErHtml(await file.text()) : await uploadJson(file);
-      const entry: Diagram = { ...d, id: uid(), savedAt: Date.now() };
+      // An imported file may carry a stale groupId, so always bind it to a fresh project.
+      const projectId = uid();
+      const entry: Diagram = { ...d, id: uid(), groupId: projectId, savedAt: Date.now() };
+      // `uploadJson` only validates `entities`, so `title` can be missing in a hand-made file.
+      const projectName = (d.title ?? '').trim() || 'Importado';
+      const g: Group = { id: projectId, name: projectName, createdAt: Date.now() };
+      setGroups((prev) => {
+        const next = [g, ...prev];
+        saveGroups(next);
+        return next;
+      });
       setDiagrams((prev) => {
         const next = [entry, ...prev];
         saveDiagrams(next);
@@ -375,8 +373,6 @@ export default function HomePage() {
   };
 
   const isEmpty = groups.length === 0 && diagrams.length === 0;
-  const hasResults = groups.length > 0 || filteredDiagrams.length > 0;
-  const isSearching = search.trim().length > 0;
 
   const renderDiagramCards = (list: Diagram[]) =>
     list.map((d) => (
@@ -394,99 +390,42 @@ export default function HomePage() {
 
   return (
     <div className="home-layout">
-      <aside className="sidebar">
-        <div className="sidebar-header">
-          <div className="sidebar-brand">
-            <SquareIcon className="sidebar-logo" />
-            <span className="sidebar-brand-text">Dexagram</span>
-          </div>
-        </div>
-
-        <div className="sidebar-content">
-          <button type="button" className="sidebar-btn sidebar-btn-primary" onClick={() => createDiagram(undefined)}>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <line x1="7" y1="1" x2="7" y2="13" />
-              <line x1="1" y1="7" x2="13" y2="7" />
-            </svg>
-            Nuevo diagrama
-          </button>
-
-          <button type="button" className="sidebar-btn" onClick={createGroup}>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.2">
-              <rect x="1" y="2" width="12" height="10" rx="1.5" />
-              <line x1="1" y1="5" x2="13" y2="5" />
-            </svg>
-            Nuevo proyecto
-          </button>
-
-          <button type="button" className="sidebar-btn" onClick={() => importInputRef.current?.click()}>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.2">
-              <path d="M7 1v8M4 6l3 3 3-3M2 11h10" />
-            </svg>
-            Importar
-          </button>
-          <input
-            ref={importInputRef}
-            type="file"
-            accept=".json,.html,.htm,application/json,text/html"
-            className="hidden-file"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) importFile(f);
-              e.target.value = '';
-            }}
-          />
-
-          {groups.length > 0 && (
-            <div className="sidebar-section">
-              <div className="sidebar-section-title">Proyectos</div>
-              {groups.map((g) => {
-                const count = diagrams.filter((d) => d.groupId === g.id).length;
-                return (
-                  <div key={g.id} className="sidebar-project">
-                    {editingGroupId === g.id ? (
-                      <input
-                        className="sidebar-project-input"
-                        value={groupDraft}
-                        autoFocus
-                        onChange={(e) => setGroupDraft(e.target.value)}
-                        onBlur={() => commitRename(g.id)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') commitRename(g.id);
-                          if (e.key === 'Escape') setEditingGroupId(null);
-                        }}
-                      />
-                    ) : (
-                      <>
-                        <span className="sidebar-project-name">{g.name}</span>
-                        <span className="sidebar-project-count">{count}</span>
-                        <button type="button" className="sidebar-project-btn" title="Renombrar" onClick={() => startRename(g)}>
-                          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1">
-                            <path d="M8.5 1.5l2 2-7 7H1.5v-2l7-7z" />
-                          </svg>
-                        </button>
-                        <button type="button" className="sidebar-project-btn sidebar-project-btn-danger" title="Eliminar" onClick={() => deleteGroup(g.id)}>
-                          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1">
-                            <path d="M2 3h8M4.5 3V1.5h3V3M3 3v7.5h6V3" />
-                          </svg>
-                        </button>
-                      </>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        <div className="sidebar-footer">
-          <ThemeSwitcher />
-        </div>
-      </aside>
-
       <div className="home-main-area">
         <header className="home-topbar">
-          <div className="home-topbar-left">
+          <div className="home-topbar-bar">
+            <div className="home-brand">
+              <SquareIcon className="home-brand-logo" />
+              <span className="home-brand-text">Dexagram</span>
+            </div>
+            <div className="home-topbar-actions">
+              <button type="button" className="btn btn-primary" onClick={createProject} aria-label="Nuevo proyecto">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.2">
+                  <rect x="1" y="2" width="12" height="10" rx="1.5" />
+                  <line x1="1" y1="5" x2="13" y2="5" />
+                </svg>
+                <span className="header-action-label">Nuevo proyecto</span>
+              </button>
+              <button type="button" className="btn btn-ghost" onClick={() => importInputRef.current?.click()} aria-label="Importar">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.2">
+                  <path d="M7 1v8M4 6l3 3 3-3M2 11h10" />
+                </svg>
+                <span className="header-action-label">Importar</span>
+              </button>
+              <input
+                ref={importInputRef}
+                type="file"
+                accept=".json,.html,.htm,application/json,text/html"
+                className="hidden-file"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) importFile(f);
+                  e.target.value = '';
+                }}
+              />
+              <ThemeSwitcher />
+            </div>
+          </div>
+          <div className="home-heading">
             <h1 className="home-title">Mis diagramas</h1>
             <div className="home-stats">
               <span className="home-stat">
@@ -498,24 +437,6 @@ export default function HomePage() {
               </span>
             </div>
           </div>
-          <div className="home-search">
-            <svg className="home-search-icon" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.2">
-              <circle cx="5.5" cy="5.5" r="4" />
-              <line x1="8.5" y1="8.5" x2="12.5" y2="12.5" />
-            </svg>
-            <input
-              className="home-search-input"
-              type="search"
-              placeholder="Buscar diagrama..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            {isSearching && (
-              <button className="home-search-clear" type="button" onClick={() => setSearch('')} title="Limpiar búsqueda">
-                ×
-              </button>
-            )}
-          </div>
         </header>
 
         <main className="home-content">
@@ -524,40 +445,22 @@ export default function HomePage() {
               <SquareIcon className="home-empty-icon" />
               <h2 className="home-empty-title">Empezá a diseñar</h2>
               <p className="home-empty-text">
-                Creá tu primer diagrama entidad-relación para visualizar el modelo de tu base de datos.
+                Creá tu primer proyecto: se crea junto con su diagrama entidad-relación para visualizar el modelo de tu base de datos.
               </p>
               <div className="home-empty-actions">
-                <button type="button" className="btn btn-primary btn-lg" onClick={() => createDiagram(undefined)}>
+                <button type="button" className="btn btn-primary btn-lg" onClick={createProject}>
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
                     <line x1="7" y1="1" x2="7" y2="13" />
                     <line x1="1" y1="7" x2="13" y2="7" />
                   </svg>
-                  Nuevo diagrama
-                </button>
-                <button type="button" className="btn btn-ghost" onClick={createGroup}>
                   Crear proyecto
                 </button>
               </div>
             </div>
           )}
 
-          {isSearching && !hasResults && (
-            <div className="home-empty-state">
-              <svg className="home-empty-icon" width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <circle cx="20" cy="20" r="14" />
-                <line x1="30" y1="30" x2="42" y2="42" />
-                <line x1="14" y1="20" x2="26" y2="20" />
-              </svg>
-              <h2 className="home-empty-title">Sin resultados</h2>
-              <p className="home-empty-text">
-                No se encontraron diagramas para "{search}". Probá con otro término.
-              </p>
-            </div>
-          )}
-
           {groups.map((g) => {
             const groupDiagrams = byGroup.get(g.id) ?? [];
-            if (isSearching && groupDiagrams.length === 0) return null;
             return (
               <section key={g.id} className="group-section">
                 <div className="group-header">
@@ -590,13 +493,6 @@ export default function HomePage() {
                       </button>
                     </>
                   )}
-                  <button type="button" className="mini-btn group-add" onClick={() => createDiagram(g.id)}>
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.2">
-                      <line x1="5" y1="1" x2="5" y2="9" />
-                      <line x1="1" y1="5" x2="9" y2="5" />
-                    </svg>
-                    Diagrama
-                  </button>
                 </div>
                 <div className="diagram-grid">
                   {groupDiagrams.length === 0 && <p className="diagram-empty">Sin diagramas todavía.</p>}
@@ -611,13 +507,6 @@ export default function HomePage() {
               <div className="group-header">
                 <h2 className="group-name group-name-muted">Sin grupo</h2>
                 <span className="badge badge-muted">{ungrouped.length}</span>
-                <button type="button" className="mini-btn group-add" onClick={() => createDiagram(undefined)}>
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.2">
-                    <line x1="5" y1="1" x2="5" y2="9" />
-                    <line x1="1" y1="5" x2="9" y2="5" />
-                  </svg>
-                  Diagrama
-                </button>
               </div>
               <div className="diagram-grid">{renderDiagramCards(ungrouped)}</div>
             </section>
