@@ -1404,6 +1404,31 @@ body {
   border-color: var(--accent);
 }
 
+.diagram-card-dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.diagram-card-drop-before::before,
+.diagram-card-drop-after::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  width: 2px;
+  border-radius: 5px;
+  background: var(--accent);
+  z-index: 2;
+}
+
+.diagram-card-drop-before::before {
+  left: -4px;
+}
+
+.diagram-card-drop-after::after {
+  right: -4px;
+}
+
 .diagram-card-accent {
   width: 4px;
   flex-shrink: 0;

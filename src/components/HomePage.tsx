@@ -32,6 +32,12 @@ function SquareIcon({ className }: { className?: string }) {
 function DiagramCard({
   d,
   groups,
+  dragging,
+  dropSide,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
   onRename,
   onDuplicate,
   onDelete,
@@ -40,6 +46,12 @@ function DiagramCard({
 }: {
   d: Diagram;
   groups: Group[];
+  dragging: boolean;
+  dropSide: 'before' | 'after' | null;
+  onDragStart: (id: string, e: React.DragEvent<HTMLDivElement>) => void;
+  onDragOver: (id: string, e: React.DragEvent<HTMLDivElement>) => void;
+  onDrop: (id: string, e: React.DragEvent<HTMLDivElement>) => void;
+  onDragEnd: () => void;
   onRename: (id: string, title: string) => void;
   onDuplicate: (id: string) => void;
   onDelete: (id: string) => void;
@@ -50,6 +62,7 @@ function DiagramCard({
   const [draft, setDraft] = useState(d.title);
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const suppressedClickRef = useRef(false);
 
   const startEdit = () => {
     setDraft(d.title);
@@ -70,11 +83,33 @@ function DiagramCard({
   };
 
   const handleCardClick = () => {
+    if (suppressedClickRef.current) return;
     if (!editing) onOpen(d.slug || d.id!);
   };
 
+  // HTML5 DnD normally suppresses the click after a drop, but guard anyway so a
+  // completed drag never also opens the diagram. Cleared on the next tick.
+  const handleDragEnd = () => {
+    suppressedClickRef.current = true;
+    setTimeout(() => {
+      suppressedClickRef.current = false;
+    }, 0);
+    onDragEnd();
+  };
+
   return (
-    <div className="diagram-card" onClick={handleCardClick} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') handleCardClick(); }}>
+    <div
+      className={`diagram-card${dragging ? ' diagram-card-dragging' : ''}${dropSide ? ` diagram-card-drop-${dropSide}` : ''}`}
+      onClick={handleCardClick}
+      role="link"
+      tabIndex={0}
+      draggable={!editing}
+      onDragStart={(e) => onDragStart(d.id!, e)}
+      onDragOver={(e) => onDragOver(d.id!, e)}
+      onDrop={(e) => onDrop(d.id!, e)}
+      onDragEnd={handleDragEnd}
+      onKeyDown={(e) => { if (e.key === 'Enter') handleCardClick(); }}
+    >
       <div className="diagram-card-accent" />
       <div className="diagram-card-body">
         {editing ? (
@@ -169,6 +204,21 @@ function DiagramCard({
   );
 }
 
+function compareByOrder(a: Diagram, b: Diagram): number {
+  return (
+    (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER) ||
+    (b.savedAt ?? 0) - (a.savedAt ?? 0)
+  );
+}
+
+function nextOrderFor(diagrams: Diagram[], groupId: string | undefined): number {
+  let min = 0;
+  for (const d of diagrams) {
+    if (d.groupId === groupId && d.order !== undefined && d.order < min) min = d.order;
+  }
+  return min - 1;
+}
+
 interface DialogState {
   open: boolean;
   title: string;
@@ -190,6 +240,12 @@ export default function HomePage() {
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [groupDraft, setGroupDraft] = useState('');
   const importInputRef = useRef<HTMLInputElement>(null);
+
+  const [dragState, setDragState] = useState<{ draggedId: string | null; overId: string | null; after: boolean }>({
+    draggedId: null,
+    overId: null,
+    after: false,
+  });
 
   const [dialog, setDialog] = useState<DialogState>({
     open: false,
@@ -220,26 +276,46 @@ export default function HomePage() {
     setAlertDialog((prev) => ({ ...prev, open: false }));
   }, []);
 
-  const sortedDiagrams = useMemo(
-    () => [...diagrams].sort((a, b) => (b.savedAt ?? 0) - (a.savedAt ?? 0)),
-    [diagrams],
-  );
-
   const byGroup = useMemo(() => {
     const map = new Map<string | null, Diagram[]>();
-    for (const d of sortedDiagrams) {
+    for (const d of diagrams) {
       const key = d.groupId ?? null;
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(d);
     }
+    // Sort each bucket in place: the arrays are fresh, so `diagrams` is never mutated.
+    for (const list of map.values()) {
+      list.sort(compareByOrder);
+    }
     return map;
-  }, [sortedDiagrams]);
+  }, [diagrams]);
   const ungrouped = byGroup.get(null) ?? [];
+
+  const reorderDiagram = useCallback((draggedId: string, targetId: string, after: boolean) => {
+    setDiagrams((prev) => {
+      const dragged = prev.find((d) => d.id === draggedId);
+      const target = prev.find((d) => d.id === targetId);
+      // Reordering never crosses projects, never moves a card onto itself.
+      if (!dragged || !target || draggedId === targetId || dragged.groupId !== target.groupId) return prev;
+      const section = prev.filter((d) => d.groupId === dragged.groupId).sort(compareByOrder);
+      const ids = section
+        .map((d) => d.id)
+        .filter((id): id is string => typeof id === 'string' && id !== draggedId);
+      const targetIndex = ids.indexOf(targetId);
+      if (targetIndex < 0) return prev;
+      ids.splice(targetIndex + (after ? 1 : 0), 0, draggedId);
+      const orderById = new Map(ids.map((id, index) => [id, index]));
+      const next = prev.map((d) =>
+        d.id !== undefined && orderById.has(d.id) ? { ...d, order: orderById.get(d.id)! } : d,
+      );
+      saveDiagrams(next);
+      return next;
+    });
+  }, []);
 
   const createProject = () => {
     const n = groups.length + 1;
     const g: Group = { id: uid(), name: `Proyecto ${n}`, createdAt: Date.now() };
-    const d: Diagram = { ...emptyDiagram(), id: uid(), groupId: g.id, savedAt: Date.now() };
     // Prepend both so the new project sits at the top of the content, directly under the header.
     // That keeps its inline rename input visible without scrolling in a long list.
     setGroups((prev) => {
@@ -248,6 +324,13 @@ export default function HomePage() {
       return next;
     });
     setDiagrams((prev) => {
+      const d: Diagram = {
+        ...emptyDiagram(),
+        id: uid(),
+        groupId: g.id,
+        savedAt: Date.now(),
+        order: nextOrderFor(prev, g.id),
+      };
       const next = [d, ...prev];
       saveDiagrams(next);
       return next;
@@ -262,13 +345,20 @@ export default function HomePage() {
    * and the diagram is created in order to work on it.
    */
   const createDiagram = (groupId: string) => {
-    const d: Diagram = { ...emptyDiagram(), id: uid(), groupId, savedAt: Date.now() };
+    const id = uid();
     setDiagrams((prev) => {
+      const d: Diagram = {
+        ...emptyDiagram(),
+        id,
+        groupId,
+        savedAt: Date.now(),
+        order: nextOrderFor(prev, groupId),
+      };
       const next = [d, ...prev];
       saveDiagrams(next);
       return next;
     });
-    navigate(`/diagrama/${d.id}`);
+    navigate(`/diagrama/${id}`);
   };
 
   const startRename = (g: Group) => {
@@ -321,7 +411,8 @@ export default function HomePage() {
       relations: src.relations.map((r) => ({ ...r })),
     };
     setDiagrams((prev) => {
-      const next = [copy, ...prev];
+      const withOrder: Diagram = { ...copy, order: nextOrderFor(prev, copy.groupId) };
+      const next = [withOrder, ...prev];
       saveDiagrams(next);
       return next;
     });
@@ -389,12 +480,66 @@ export default function HomePage() {
 
   const isEmpty = groups.length === 0 && diagrams.length === 0;
 
+  const clearDragState = useCallback(() => {
+    setDragState({ draggedId: null, overId: null, after: false });
+  }, []);
+
+  const handleCardDragStart = useCallback((id: string, e: React.DragEvent<HTMLDivElement>) => {
+    setDragState({ draggedId: id, overId: null, after: false });
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id);
+  }, []);
+
+  const handleCardDragOver = useCallback(
+    (targetId: string, e: React.DragEvent<HTMLDivElement>) => {
+      const draggedId = dragState.draggedId;
+      const dragged = draggedId ? diagrams.find((d) => d.id === draggedId) : undefined;
+      const target = diagrams.find((d) => d.id === targetId);
+      // No indicator (and no allowed drop) outside the dragged card's own project.
+      if (!dragged || !target || draggedId === targetId || dragged.groupId !== target.groupId) {
+        setDragState((prev) => (prev.overId === null ? prev : { ...prev, overId: null, after: false }));
+        return;
+      }
+      e.preventDefault();
+      const rect = e.currentTarget.getBoundingClientRect();
+      const after = e.clientX > rect.left + rect.width / 2;
+      // dragover fires continuously while dragging: reuse the previous object when
+      // nothing actually changed so the grid does not re-render on every tick.
+      setDragState((prev) =>
+        prev.overId === targetId && prev.after === after
+          ? prev
+          : { draggedId, overId: targetId, after },
+      );
+    },
+    [diagrams, dragState.draggedId],
+  );
+
+  const handleCardDrop = useCallback(
+    (targetId: string, e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      const draggedId = dragState.draggedId;
+      if (draggedId && draggedId !== targetId) {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const after = e.clientX > rect.left + rect.width / 2;
+        reorderDiagram(draggedId, targetId, after);
+      }
+      setDragState({ draggedId: null, overId: null, after: false });
+    },
+    [dragState.draggedId, reorderDiagram],
+  );
+
   const renderDiagramCards = (list: Diagram[]) =>
     list.map((d) => (
       <DiagramCard
         key={d.id}
         d={d}
         groups={groups}
+        dragging={dragState.draggedId === d.id}
+        dropSide={dragState.overId === d.id ? (dragState.after ? 'after' : 'before') : null}
+        onDragStart={handleCardDragStart}
+        onDragOver={handleCardDragOver}
+        onDrop={handleCardDrop}
+        onDragEnd={clearDragState}
         onRename={renameDiagram}
         onDuplicate={duplicateDiagram}
         onDelete={deleteDiagram}

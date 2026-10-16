@@ -61,6 +61,8 @@ export interface Group {
 export interface Diagram {
   id?: string;
   savedAt?: number;
+  // Manual position inside its project; `undefined` means "not reordered yet", fall back to `savedAt`.
+  order?: number;
   groupId?: string;
   slug?: string;
   title: string;
