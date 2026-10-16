@@ -48,6 +48,7 @@ import {
 import { exportHtml } from '../lib/exportHtml';
 import { parseErHtml } from '../lib/importHtml';
 import { parsePrisma } from '../lib/parsePrisma';
+import { parseDbml } from '../lib/parseDbml';
 import { exportPrisma } from '../lib/exportPrisma';
 import { exportSql } from '../lib/exportSql';
 
@@ -577,9 +578,8 @@ export default function ErEditor() {
 
   const entityList = useMemo(() => nodes.map((n) => n.data!.entity), [nodes]);
 
-  const handleImportPrisma = useCallback(
-    (schema: string) => {
-      const result = parsePrisma(schema);
+  const applyImport = useCallback(
+    (result: { entities: Entity[]; relations: Relation[] }) => {
       // Auto-layout: grid with 280px columns, 200px rows
       const entities = result.entities.map((e, i) => ({
         ...e,
@@ -599,6 +599,22 @@ export default function ErEditor() {
       setSelection(null);
     },
     [setNodes, setEdges],
+  );
+
+  const handleImportPrisma = useCallback(
+    (schema: string) => applyImport(parsePrisma(schema)),
+    [applyImport],
+  );
+
+  const handleImportDbml = useCallback(
+    (dbml: string) => {
+      const result = parseDbml(dbml);
+      // Nothing parsed: report it instead of replacing the diagram with an empty canvas.
+      if (result.entities.length === 0) return 0;
+      applyImport(result);
+      return result.entities.length;
+    },
+    [applyImport],
   );
 
   const exportDiagram = useMemo<Diagram>(() => toDiagram(title, subtitle, nodes, edges), [title, subtitle, nodes, edges]);
@@ -736,6 +752,7 @@ export default function ErEditor() {
           onDeleteRelation={deleteRelation}
           onDeleteEntity={deleteEntity}
           onImportPrisma={handleImportPrisma}
+          onImportDbml={handleImportDbml}
           exportData={exportDiagram}
         />
       </div>

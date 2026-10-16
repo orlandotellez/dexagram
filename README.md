@@ -19,7 +19,7 @@ Aplicación de escritorio + web para diseñar y documentar **modelos entidad-rel
 | **Relaciones** | Conectar **puntos laterales** de la entidad o **puntos por campo**. Cada relación guarda cardinalidad en ambos extremos (`1`, `N`, …), etiqueta (p. ej. `TIENE`) y campo de origen/destino. Los lados se eligen solos: se toman del punto que agarrás y se recalculan por geometría si faltan. |
 | **Inspector** | Al seleccionar una entidad: nombre, tabla, campos, raíz del dominio. Al seleccionar una relación: cardinalidades, etiqueta y campos conectados. |
 | **Vista previa** | Botón **Vista previa** en el editor: abre un modal con el diagrama renderizado tal cual saldría exportado, con los colores del tema actual. |
-| **Exportar / Importar** | **Exportar HTML**: archivo único, autocontenido (SVG + CSS inline) con leyenda `#`, `→`, `1:1`, `1:N`. **Guardar JSON**: backup editable. **Importar**: acepta JSON o HTML exportado. |
+| **Exportar / Importar** | **Exportar HTML**: archivo único, autocontenido (SVG + CSS inline) con leyenda `#`, `→`, `1:1`, `1:N`. **Guardar JSON**: backup editable. **Importar**: acepta JSON o HTML exportado. **Importar DBML**: pegá un esquema DBML (tablas + `Ref` + `Records`) y genera el diagrama; sin nada seleccionado, el inspector muestra el cuadro para pegar DBML. |
 | **Temas** | 8 temas con selector en forma de popover agrupado en *Claros / Oscuros*: `luna`, `slate`, `blanco` (blanco puro + negro), `midnight`, `dark`, `emerald`, `ocean` y `noir` (negro puro + blanco, **tema por defecto**). La preferencia se guarda en `localStorage`. |
 | **URLs por slug** | Cada diagrama admite un slug opcional (`/diagrama/slug-o-id`) que se mantiene único contra los demás. |
 
@@ -41,6 +41,7 @@ bun dev              # web en http://localhost:1420 (HMR)
 bun run build        # build de producción → dist/
 bun run preview      # servir el build
 bun run lint         # eslint
+bun test             # tests (bun test)
 
 bun run tauri dev    # app de escritorio en modo desarrollo
 bun run tauri build  # binarios/instaladores (identifier: com.dev-espada.dexagram)
@@ -57,7 +58,8 @@ Los scripts equivalentes con `npm` también existen en `package.json`.
 3. En el **inspector derecho**, poné nombre, tabla y campos; marcá `#`/`→` según corresponda.
 4. Arrastrá desde un **punto (◦) de un campo o de un costado** hasta el punto de otra entidad para crear la relación.
 5. Borrá elementos con `Supr`/`Backspace` o desde el inspector.
-6. **Vista previa** para ver el resultado y **Exportar HTML** para compartirlo/documentarlo.
+6. Con **nada seleccionado**, pegá tu esquema **DBML** en el inspector y tocá **Generar diagrama** para crear entidades y relaciones de una vez (también está en la pestaña **Importar / Exportar**, junto a la importación de Prisma).
+7. **Vista previa** para ver el resultado y **Exportar HTML** para compartirlo/documentarlo.
 
 > Los puntos de conexión de cada campo y los laterales de la entidad son los círculos visibles; no hay puntos arriba/abajo.
 
@@ -91,7 +93,10 @@ frontend-dexagram/
 │   │   ├── storage.ts       # localStorage, migración legacy, download/upload
 │   │   ├── themes.ts        # catálogo THEMES + lectura/aplicación del tema
 │   │   ├── exportHtml.ts    # render SVG del diagrama + HTML autocontenido
-│   │   └── importHtml.ts    # parser del HTML exportado
+│   │   ├── importHtml.ts    # parser del HTML exportado
+│   │   ├── parsePrisma.ts   # parser de esquemas Prisma
+│   │   ├── parseDbml.ts     # parser de esquemas DBML
+│   │   └── parseDbml.test.ts# tests del parser DBML (bun test)
 │   └── components/
 │       ├── HomePage.tsx     # listado por proyectos
 │       ├── ErEditor.tsx     # editor (React Flow)
