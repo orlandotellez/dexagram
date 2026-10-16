@@ -20,7 +20,57 @@ interface InspectorProps {
   onDeleteRelation: (id: string) => void;
   onDeleteEntity: (id: string) => void;
   onImportPrisma?: (schema: string) => void;
+  onImportDbml?: (dbml: string) => number;
   exportData?: Diagram | null;
+}
+
+function DbmlImport({ onImport }: { onImport: (dbml: string) => number }) {
+  const [text, setText] = useState('');
+  const [error, setError] = useState('');
+
+  const handleGenerate = () => {
+    const value = text.trim();
+    if (!value) return;
+    const imported = onImport(value);
+    // The parser never throws, so unparseable input arrives as zero entities.
+    // Keep the text so the schema can be fixed instead of wiping the diagram.
+    if (imported === 0) {
+      setError('No se reconoció ninguna tabla en el DBML. Revisá el esquema.');
+      return;
+    }
+    setError('');
+    setText('');
+  };
+
+  return (
+    <div>
+      <div className="insp-section-title">Importar DBML</div>
+      <textarea
+        className="insp-textarea"
+        rows={6}
+        value={text}
+        placeholder="Pegá tu esquema DBML acá..."
+        onChange={(e) => {
+          setText(e.target.value);
+          if (error) setError('');
+        }}
+      />
+      {error ? (
+        <p className="insp-hint insp-hint-error">{error}</p>
+      ) : (
+        <p className="insp-hint">Reemplaza el diagrama actual.</p>
+      )}
+      <button
+        type="button"
+        className="mini-btn mini-btn-link"
+        style={{ marginTop: 8 }}
+        disabled={!text.trim()}
+        onClick={handleGenerate}
+      >
+        Generar diagrama
+      </button>
+    </div>
+  );
 }
 
 function FieldRow({
@@ -89,6 +139,7 @@ export function Inspector({
   onDeleteRelation,
   onDeleteEntity,
   onImportPrisma,
+  onImportDbml,
   exportData,
 }: InspectorProps) {
   const [tab, setTab] = useState<'entity' | 'import-export'>('entity');
@@ -143,9 +194,18 @@ export function Inspector({
       </div>
 
       {tab === 'entity' && !selection && (
-        <p className="inspector-empty">
-          Selecciona una entidad o una relacion para editarla.
-        </p>
+        onImportDbml ? (
+          <div>
+            <p className="inspector-empty">
+              Seleccioná una entidad para editarla, o pegá DBML y generá el diagrama.
+            </p>
+            <DbmlImport onImport={onImportDbml} />
+          </div>
+        ) : (
+          <p className="inspector-empty">
+            Selecciona una entidad o una relacion para editarla.
+          </p>
+        )
       )}
 
       {tab === 'entity' && isEntity && entity && entityId && (
@@ -321,6 +381,8 @@ export function Inspector({
               </button>
             </div>
           )}
+
+          {onImportDbml && <DbmlImport onImport={onImportDbml} />}
 
           {exportData && (
             <>

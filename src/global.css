@@ -527,6 +527,18 @@ body {
   margin: 0;
 }
 
+.insp-hint {
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 8px 0 0;
+}
+
+.insp-hint-error {
+  color: var(--danger);
+}
+
 /* Inspector tabs */
 .insp-tabs {
   display: flex;
