@@ -256,6 +256,21 @@ export default function HomePage() {
     setEditingGroupId(g.id);
   };
 
+  /**
+   * Adds another diagram to an existing project. Unlike `createProject` this one
+   * navigates straight into the editor: there is no inline name to confirm here,
+   * and the diagram is created in order to work on it.
+   */
+  const createDiagram = (groupId: string) => {
+    const d: Diagram = { ...emptyDiagram(), id: uid(), groupId, savedAt: Date.now() };
+    setDiagrams((prev) => {
+      const next = [d, ...prev];
+      saveDiagrams(next);
+      return next;
+    });
+    navigate(`/diagrama/${d.id}`);
+  };
+
   const startRename = (g: Group) => {
     setGroupDraft(g.name);
     setEditingGroupId(g.id);
@@ -493,6 +508,13 @@ export default function HomePage() {
                       </button>
                     </>
                   )}
+                  <button type="button" className="mini-btn group-add" title="Agregar diagrama al proyecto" onClick={() => createDiagram(g.id)}>
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.2">
+                      <line x1="5" y1="1" x2="5" y2="9" />
+                      <line x1="1" y1="5" x2="9" y2="5" />
+                    </svg>
+                    Diagrama
+                  </button>
                 </div>
                 <div className="diagram-grid">
                   {groupDiagrams.length === 0 && <p className="diagram-empty">Sin diagramas todavía.</p>}

@@ -13,7 +13,7 @@ Aplicación de escritorio + web para diseñar y documentar **modelos entidad-rel
 
 | Área | Qué hace |
 | --- | --- |
-| **Mis diagramas** | Cabecera en dos niveles: arriba la marca junto a `Nuevo proyecto`, `Importar` y el selector de tema; abajo el título y el conteo de diagramas y proyectos. La barra lateral ya no existe. Modelo **un proyecto = un diagrama**: al crear un proyecto nace su diagrama. Renombrar, duplicar, mover entre proyectos y eliminar se hacen sobre la tarjeta (con confirmación). |
+| **Mis diagramas** | Cabecera en dos niveles: arriba la marca junto a `Nuevo proyecto`, `Importar` y el selector de tema; abajo el título y el conteo de diagramas y proyectos. La barra lateral ya no existe. Crear un proyecto también crea su primer diagrama, y cada proyecto admite más con el `+ Diagrama` de su cabecera. Renombrar, duplicar, mover entre proyectos y eliminar se hacen sobre la tarjeta (con confirmación). |
 | **Editor ER** | Lienzo infinito con zoom/pan. Agregar **Entidades** y **Entidades focales** (raíz del dominio) desde la paleta, por clic o arrastrando. |
 | **Campos** | Cada entidad lista sus campos; marcar `#` (clave primaria) o `→` (clave foránea) desde el inspector. |
 | **Relaciones** | Conectar **puntos laterales** de la entidad o **puntos por campo**. Cada relación guarda cardinalidad en ambos extremos (`1`, `N`, …), etiqueta (p. ej. `TIENE`) y campo de origen/destino. Los lados se eligen solos por geometría, pero podés invertirlos con el `⇄` sobre la línea seleccionada, la tecla `F`, o el control `Auto | Izq | Der` del inspector; `Auto` la devuelve a la colocación geométrica. |
