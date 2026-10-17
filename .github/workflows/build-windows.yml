@@ -1,8 +1,13 @@
-name: Build netlab windows
+name: Build Dexagram (Windows)
 
 # Se dispara a mano desde la pestaña Actions de GitHub.
 # El .exe de Windows solo puede compilarse en un runner Windows:
 # desde Linux Tauri genera únicamente los bundles de Linux.
+#
+# Ojo con las versiones de Tauri: el paquete de npm y el crate de Rust tienen
+# que estar en el mismo major.minor (tauri <-> @tauri-apps/api). Si `tauri build`
+# falla con "version mismatched Tauri packages", actualizá los dos lockfiles
+# juntos: bun.lock y src-tauri/Cargo.lock.
 on:
   workflow_dispatch:
 
@@ -12,9 +17,6 @@ permissions:
 jobs:
   build-windows:
     runs-on: windows-latest
-    defaults:
-      run:
-        working-directory: ./
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,7 +32,7 @@ jobs:
       - name: Cache Rust
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: frontend/src-tauri
+          workspaces: src-tauri
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -43,6 +45,6 @@ jobs:
         with:
           name: dexagram
           path: |
-            frontend/src-tauri/target/release/bundle/nsis/*.exe
-            frontend/src-tauri/target/release/bundle/msi/*.msi
+            src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/bundle/msi/*.msi
           if-no-files-found: error
